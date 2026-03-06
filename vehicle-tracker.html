@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时车辆追踪仪表盘</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Control Bar */
+        .control-bar {
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .control-bar h1 {
+            font-size: 1.2em;
+            margin-right: auto;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d9ff, #0099cc);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #1a1a2e;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #cc3a47);
+            color: #fff;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa502, #cc8402);
+            color: #1a1a2e;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4757;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #00ff88;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Map Area */
+        .map-area {
+            flex: 7;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Right Panel */
+        .right-panel {
+            flex: 3;
+            min-width: 320px;
+            max-width: 450px;
+            background: #16213e;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .panel-section h3 {
+            margin-bottom: 15px;
+            color: #00d9ff;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Vehicle List */
+        .vehicle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .vehicle-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #00d9ff;
+            transition: all 0.3s ease;
+        }
+
+        .vehicle-card:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(5px);
+        }
+
+        .vehicle-card.speeding {
+            border-left-color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .vehicle-name {
+            font-weight: 600;
+            color: #00ff88;
+        }
+
+        .vehicle-status {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .vehicle-status.speeding {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .vehicle-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+
+        .info-item span {
+            color: #00d9ff;
+            font-weight: 600;
+        }
+
+        /* Alert List */
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            background: rgba(255, 71, 87, 0.1);
+            border-left: 3px solid #ff4757;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .alert-time {
+            color: #ff4757;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alert-message {
+            color: #ccc;
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 180px;
+            margin-bottom: 15px;
+        }
+
+        .chart-container canvas {
+            max-height: 100%;
+        }
+
+        /* Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #00d9ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        /* Playback Controls */
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .playback-controls select,
+        .playback-controls input {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.9em;
+        }
+
+        .playback-controls select:focus,
+        .playback-controls input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        /* Notification Banner */
+        .notification-banner {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff4757, #cc3a47);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.4);
+            z-index: 2000;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .map-area {
+                height: 50vh;
+                flex: none;
+            }
+
+            .right-panel {
+                flex: none;
+                width: 100%;
+                max-width: none;
+                height: auto;
+            }
+
+            .control-bar {
+                flex-wrap: wrap;
+            }
+
+            .control-bar h1 {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .btn {
+                font-size: 0.8em;
+                padding: 8px 12px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 217, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 217, 255, 0.5);
+        }
+
+        /* Connection Status Panel */
+        .connection-panel {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .connection-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .connection-info span {
+            color: #00d9ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Control Bar -->
+    <div class="control-bar">
+        <h1>🚗 实时车辆追踪仪表盘</h1>
+        <button class="btn btn-success" id="startBtn">▶ 开始追踪</button>
+        <button class="btn btn-danger" id="stopBtn" disabled>⏹ 停止</button>
+        <button class="btn btn-warning" id="replayBtn">📹 回放历史</button>
+        <div class="status-indicator">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">未连接</span>
+        </div>
+        <div class="status-indicator">
+            <span>车辆: <strong id="vehicleCount">0</strong></span>
+        </div>
+    </div>
+
+    <!-- Notification Banner -->
+    <div class="notification-banner" id="notificationBanner"></div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Map Area -->
+        <div class="map-area">
+            <div id="map"></div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Vehicle List Section -->
+            <div class="panel-section">
+                <h3>📍 车辆列表</h3>
+                <div class="vehicle-list" id="vehicleList">
+                    <p style="color: #888; text-align: center; padding: 20px;">点击"开始追踪"以加载数据</p>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="panel-section">
+                <h3>📊 数据统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgSpeed">0</div>
+                        <div class="stat-label">平均速度 (km/h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalDistance">0</div>
+                        <div class="stat-label">总里程 (km)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="maxSpeed">0</div>
+                        <div class="stat-label">最高速度 (km/h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="alertCount">0</div>
+                        <div class="stat-label">超警示次数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="panel-section">
+                <h3>📈 速度趋势</h3>
+                <div class="chart-container">
+                    <canvas id="speedChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Alerts Section -->
+            <div class="panel-section">
+                <h3>⚠️ 警报历史</h3>
+                <div class="alert-list" id="alertList">
+                    <p style="color: #888; text-align: center; padding: 20px;">暂无警报</p>
+                </div>
+            </div>
+
+            <!-- Connection Info -->
+            <div class="panel-section">
+                <h3>🔌 连接信息</h3>
+                <div class="connection-panel">
+                    <div class="connection-info">
+                        <span>状态: <strong id="connStatus">断开</strong></span>
+                        <span>重连: <strong id="reconnectCount">0</strong> 次</span>
+                    </div>
+                    <div class="connection-info" style="margin-top: 8px;">
+                        <span>消息: <strong id="messageCount">0</strong></span>
+                        <span>运行: <strong id="uptime">0s</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+    <script>
+        // ==================== MockWebSocket Class ====================
+        class MockWebSocket {
+            constructor(url) {
+                this.url = url;
+                this.readyState = 0; // CONNECTING
+                this.onmessage = null;
+                this.onopen = null;
+                this.onclose = null;
+                this.onerror = null;
+                this.retryCount = 0;
+                this.maxRetries = 5;
+                this.messageInterval = null;
+                this.vehicles = this.initializeVehicles();
+            }
+
+            initializeVehicles() {
+                return [
+                    { id: 'v1', name: '京A-12345', lat: 39.9042, lng: 116.4074, speed: 60, heading: 45 },
+                    { id: 'v2', name: '沪B-67890', lat: 31.2304, lng: 121.4737, speed: 75, heading: 180 },
+                    { id: 'v3', name: '粤C-11111', lat: 23.1291, lng: 113.2644, speed: 55, heading: 270 },
+                    { id: 'v4', name: '深D-22222', lat: 22.5431, lng: 114.0579, speed: 85, heading: 0 },
+                    { id: 'v5', name: '杭E-33333', lat: 30.2741, lng: 120.1551, speed: 45, heading: 90 }
+                ];
+            }
+
+            connect() {
+                console.log(`[MockWebSocket] Connecting to ${this.url}...`);
+
+                // Simulate connection delay
+                setTimeout(() => {
+                    this.readyState = 1; // OPEN
+                    if (this.onopen) {
+                        this.onopen({ type: 'open' });
+                    }
+                    this.startSending();
+                }, 500);
+            }
+
+            startSending() {
+                this.messageInterval = setInterval(() => {
+                    if (this.readyState === 1) {
+                        this.sendGPSUpdate();
+                    }
+                }, 1000);
+            }
+
+            sendGPSUpdate() {
+                this.vehicles.forEach(vehicle => {
+                    // Update vehicle position (random movement)
+                    vehicle.lat += (Math.random() - 0.5) * 0.001;
+                    vehicle.lng += (Math.random() - 0.5) * 0.001;
+                    vehicle.speed = Math.max(20, Math.min(120, vehicle.speed + (Math.random() - 0.5) * 10));
+                    vehicle.heading = (vehicle.heading + (Math.random() - 0.5) * 20 + 360) % 360;
+
+                    const message = {
+                        type: 'gps_update',
+                        vehicleId: vehicle.id,
+                        data: {
+                            lat: vehicle.lat,
+                            lng: vehicle.lng,
+                            speed: Math.round(vehicle.speed),
+                            heading: Math.round(vehicle.heading),
+                            timestamp: Date.now()
+                        }
+                    };
+
+                    if (this.onmessage) {
+                        this.onmessage({ data: JSON.stringify(message) });
+                    }
+                });
+            }
+
+            close() {
+                this.readyState = 3; // CLOSED
+                if (this.messageInterval) {
+                    clearInterval(this.messageInterval);
+                    this.messageInterval = null;
+                }
+                if (this.onclose) {
+                    this.onclose({ type: 'close', wasClean: true });
+                }
+            }
+
+            reconnect() {
+                this.retryCount++;
+                const delay = Math.min(1000 * Math.pow(2, this.retryCount), 30000);
+                console.log(`[MockWebSocket] Reconnecting in ${delay}ms (attempt ${this.retryCount})`);
+
+                setTimeout(() => {
+                    this.connect();
+                }, delay);
+            }
+
+            send(data) {
+                // Mock send - just log it
+                console.log('[MockWebSocket] Sent:', data);
+            }
+        }
+
+        // ==================== VehicleManager Class ====================
+        class VehicleManager {
+            constructor() {
+                this.vehicles = new Map();
+                this.alerts = [];
+                this.stats = {
+                    totalDistance: 0,
+                    maxSpeed: 0,
+                    avgSpeed: 0,
+                    speedReadings: []
+                };
+            }
+
+            addVehicle(vehicleData) {
+                if (!this.vehicles.has(vehicleData.id)) {
+                    this.vehicles.set(vehicleData.id, {
+                        id: vehicleData.id,
+                        name: this.getVehicleName(vehicleData.id),
+                        lat: vehicleData.data.lat,
+                        lng: vehicleData.data.lng,
+                        speed: vehicleData.data.speed,
+                        heading: vehicleData.data.heading,
+                        timestamp: vehicleData.data.timestamp,
+                        history: [],
+                        totalDistance: 0
+                    });
+                }
+                return this.vehicles.get(vehicleData.id);
+            }
+
+            getVehicleName(id) {
+                const names = {
+                    'v1': '京A-12345',
+                    'v2': '沪B-67890',
+                    'v3': '粤C-11111',
+                    'v4': '深D-22222',
+                    'v5': '杭E-33333'
+                };
+                return names[id] || `车辆-${id}`;
+            }
+
+            updateVehicle(vehicleId, data) {
+                const vehicle = this.vehicles.get(vehicleId);
+                if (!vehicle) return null;
+
+                // Calculate distance
+                const distance = this.calculateDistance(
+                    vehicle.lat, vehicle.lng,
+                    data.lat, data.lng
+                );
+
+                // Store history point
+                vehicle.history.push({
+                    lat: data.lat,
+                    lng: data.lng,
+                    speed: data.speed,
+                    heading: data.heading,
+                    timestamp: data.timestamp
+                });
+
+                // Keep only last 1000 points to prevent memory issues
+                if (vehicle.history.length > 1000) {
+                    vehicle.history.shift();
+                }
+
+                // Update vehicle data
+                const oldData = { ...vehicle };
+                vehicle.lat = data.lat;
+                vehicle.lng = data.lng;
+                vehicle.speed = data.speed;
+                vehicle.heading = data.heading;
+                vehicle.timestamp = data.timestamp;
+                vehicle.totalDistance += distance;
+
+                // Update stats
+                this.updateStats(data.speed, distance);
+
+                return { vehicle, oldData };
+            }
+
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371; // Earth radius in km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+
+            updateStats(speed, distance) {
+                this.stats.speedReadings.push(speed);
+                if (this.stats.speedReadings.length > 100) {
+                    this.stats.speedReadings.shift();
+                }
+
+                this.stats.totalDistance += distance;
+                this.stats.maxSpeed = Math.max(this.stats.maxSpeed, speed);
+                this.stats.avgSpeed = Math.round(
+                    this.stats.speedReadings.reduce((a, b) => a + b, 0) / this.stats.speedReadings.length
+                );
+            }
+
+            getVehicle(vehicleId) {
+                return this.vehicles.get(vehicleId);
+            }
+
+            getAllVehicles() {
+                return Array.from(this.vehicles.values());
+            }
+
+            addAlert(alert) {
+                this.alerts.unshift(alert);
+                if (this.alerts.length > 50) {
+                    this.alerts.pop();
+                }
+            }
+
+            getAlerts() {
+                return this.alerts;
+            }
+        }
+
+        // ==================== MapController Class ====================
+        class MapController {
+            constructor(mapId, vehicleManager) {
+                this.map = L.map(mapId).setView([35.8617, 104.1954], 5);
+                this.vehicleManager = vehicleManager;
+                this.markers = new Map();
+                this.polylines = new Map();
+                this.isPlaying = false;
+                this.playbackIndex = 0;
+                this.playbackVehicleId = null;
+                this.playbackTimeout = null;
+
+                this.initMap();
+            }
+
+            initMap() {
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(this.map);
+
+                // Create custom icon
+                this.createVehicleIcon = (color = '#00d9ff') => {
+                    return L.divIcon({
+                        className: 'vehicle-marker',
+                        html: `<div style="
+                            background: ${color};
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50% 50% 50% 0;
+                            transform: rotate(-45deg);
+                            border: 3px solid white;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                        "></div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+                };
+            }
+
+            addVehicle(vehicle) {
+                const marker = L.marker([vehicle.lat, vehicle.lng], {
+                    icon: this.createVehicleIcon()
+                }).addTo(this.map);
+
+                marker.bindPopup(`
+                    <strong>${vehicle.name}</strong><br>
+                    速度: ${vehicle.speed} km/h<br>
+                    方向: ${vehicle.heading}°<br>
+                    里程: ${vehicle.totalDistance.toFixed(2)} km
+                `);
+
+                this.markers.set(vehicle.id, marker);
+            }
+
+            updateVehicle(vehicle, oldData) {
+                const marker = this.markers.get(vehicle.id);
+                if (!marker) {
+                    this.addVehicle(vehicle);
+                    return;
+                }
+
+                // Update marker position
+                marker.setLatLng([vehicle.lat, vehicle.lng]);
+
+                // Update popup content
+                marker.setPopupContent(`
+                    <strong>${vehicle.name}</strong><br>
+                    速度: ${vehicle.speed} km/h<br>
+                    方向: ${vehicle.heading}°<br>
+                    里程: ${vehicle.totalDistance.toFixed(2)} km
+                `);
+
+                // Update icon color based on speed
+                const icon = vehicle.speed > 80
+                    ? this.createVehicleIcon('#ff4757')
+                    : this.createVehicleIcon();
+                marker.setIcon(icon);
+
+                // Draw trail (last 10 points)
+                this.drawTrail(vehicle);
+            }
+
+            drawTrail(vehicle) {
+                const recentPoints = vehicle.history.slice(-10);
+                if (recentPoints.length < 2) return;
+
+                const latLngs = recentPoints.map(p => [p.lat, p.lng]);
+
+                // Remove old polyline
+                if (this.polylines.has(vehicle.id)) {
+                    this.map.removeLayer(this.polylines.get(vehicle.id));
+                }
+
+                // Draw new polyline
+                const polyline = L.polyline(latLngs, {
+                    color: vehicle.speed > 80 ? '#ff4757' : '#00d9ff',
+                    weight: 3,
+                    opacity: 0.7
+                }).addTo(this.map);
+
+                this.polylines.set(vehicle.id, polyline);
+            }
+
+            startPlayback(vehicleId, startTime, endTime, speed = 1) {
+                this.stopPlayback();
+
+                const vehicle = this.vehicleManager.getVehicle(vehicleId);
+                if (!vehicle || vehicle.history.length === 0) {
+                    alert('该车辆无历史数据');
+                    return;
+                }
+
+                this.isPlaying = true;
+                this.playbackVehicleId = vehicleId;
+                this.playbackIndex = 0;
+
+                // Filter history by time range
+                const filteredHistory = vehicle.history.filter(p =>
+                    p.timestamp >= startTime && p.timestamp <= endTime
+                );
+
+                if (filteredHistory.length === 0) {
+                    alert('该时间段无数据');
+                    this.isPlaying = false;
+                    return;
+                }
+
+                // Draw full trail lightly
+                const allLatLngs = filteredHistory.map(p => [p.lat, p.lng]);
+                L.polyline(allLatLngs, {
+                    color: '#666',
+                    weight: 2,
+                    opacity: 0.3,
+                    dashArray: '5, 10'
+                }).addTo(this.map);
+
+                // Animate along trail
+                const animate = () => {
+                    if (!this.isPlaying || this.playbackIndex >= filteredHistory.length) {
+                        this.stopPlayback();
+                        return;
+                    }
+
+                    const point = filteredHistory[this.playbackIndex];
+                    const marker = this.markers.get(vehicleId);
+
+                    if (marker) {
+                        marker.setLatLng([point.lat, point.lng]);
+                        this.map.panTo([point.lat, point.lng]);
+                    }
+
+                    this.playbackIndex++;
+                    this.playbackTimeout = setTimeout(animate, 500 / speed);
+                };
+
+                animate();
+            }
+
+            stopPlayback() {
+                this.isPlaying = false;
+                if (this.playbackTimeout) {
+                    clearTimeout(this.playbackTimeout);
+                    this.playbackTimeout = null;
+                }
+            }
+
+            fitBounds() {
+                if (this.markers.size === 0) return;
+
+                const bounds = L.latLngBounds(
+                    Array.from(this.markers.values()).map(m => m.getLatLng())
+                );
+                this.map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        // ==================== AlertManager Class ====================
+        class AlertManager {
+            constructor(vehicleManager) {
+                this.vehicleManager = vehicleManager;
+                this.speedThreshold = 80;
+                this.hasPermission = false;
+                this.requestPermission();
+            }
+
+            async requestPermission() {
+                if ('Notification' in window) {
+                    this.hasPermission = await Notification.requestPermission();
+                }
+            }
+
+            checkSpeed(vehicle) {
+                if (vehicle.speed > this.speedThreshold) {
+                    const alert = {
+                        vehicleId: vehicle.id,
+                        vehicleName: vehicle.name,
+                        speed: vehicle.speed,
+                        timestamp: new Date(),
+                        message: `${vehicle.name} 超速! 当前速度: ${vehicle.speed} km/h`
+                    };
+
+                    this.vehicleManager.addAlert(alert);
+                    this.showNotification(alert);
+                    this.showBanner(alert);
+
+                    return alert;
+                }
+                return null;
+            }
+
+            showNotification(alert) {
+                if (this.hasPermission === 'granted') {
+                    new Notification('⚠️ 超速警报', {
+                        body: alert.message,
+                        icon: '🚗',
+                        tag: `speed-${alert.vehicleId}`
+                    });
+                }
+            }
+
+            showBanner(alert) {
+                const banner = document.getElementById('notificationBanner');
+                banner.textContent = `🚨 ${alert.message}`;
+                banner.style.display = 'block';
+
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // ==================== ChartManager Class ====================
+        class ChartManager {
+            constructor() {
+                this.speedChart = null;
+                this.speedData = {
+                    labels: [],
+                    datasets: [{
+                        label: '平均速度',
+                        data: [],
+                        borderColor: '#00d9ff',
+                        backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                };
+                this.initSpeedChart();
+            }
+
+            initSpeedChart() {
+                const ctx = document.getElementById('speedChart').getContext('2d');
+                this.speedChart = new Chart(ctx, {
+                    type: 'line',
+                    data: this.speedData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 120,
+                                grid: {
+                                    color: 'rgba(255,255,255,0.1)'
+                                },
+                                ticks: {
+                                    color: '#888'
+                                }
+                            },
+                            x: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateSpeedChart(avgSpeed) {
+                const now = new Date().toLocaleTimeString();
+
+                this.speedData.labels.push(now);
+                this.speedData.datasets[0].data.push(avgSpeed);
+
+                // Keep last 20 data points
+                if (this.speedData.labels.length > 20) {
+                    this.speedData.labels.shift();
+                    this.speedData.datasets[0].data.shift();
+                }
+
+                this.speedChart.update('none');
+            }
+        }
+
+        // ==================== Main Application ====================
+        class VehicleTrackerApp {
+            constructor() {
+                this.vehicleManager = new VehicleManager();
+                this.mapController = new MapController('map', this.vehicleManager);
+                this.alertManager = new AlertManager(this.vehicleManager);
+                this.chartManager = new ChartManager();
+
+                this.socket = null;
+                this.isConnected = false;
+                this.startTime = null;
+                this.messageCount = 0;
+                this.reconnectCount = 0;
+                this.updateInterval = null;
+
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.elements = {
+                    startBtn: document.getElementById('startBtn'),
+                    stopBtn: document.getElementById('stopBtn'),
+                    replayBtn: document.getElementById('replayBtn'),
+                    statusDot: document.getElementById('statusDot'),
+                    statusText: document.getElementById('statusText'),
+                    vehicleCount: document.getElementById('vehicleCount'),
+                    vehicleList: document.getElementById('vehicleList'),
+                    alertList: document.getElementById('alertList'),
+                    avgSpeed: document.getElementById('avgSpeed'),
+                    totalDistance: document.getElementById('totalDistance'),
+                    maxSpeed: document.getElementById('maxSpeed'),
+                    alertCount: document.getElementById('alertCount'),
+                    connStatus: document.getElementById('connStatus'),
+                    reconnectCount: document.getElementById('reconnectCount'),
+                    messageCount: document.getElementById('messageCount'),
+                    uptime: document.getElementById('uptime')
+                };
+            }
+
+            bindEvents() {
+                this.elements.startBtn.addEventListener('click', () => this.startTracking());
+                this.elements.stopBtn.addEventListener('click', () => this.stopTracking());
+                this.elements.replayBtn.addEventListener('click', () => this.showReplayDialog());
+            }
+
+            startTracking() {
+                if (this.isConnected) return;
+
+                this.startTime = Date.now();
+                this.socket = new MockWebSocket('ws://localhost:8080');
+                this.setupSocketEvents();
+
+                this.elements.startBtn.disabled = true;
+                this.elements.stopBtn.disabled = false;
+
+                // Update uptime every second
+                this.updateInterval = setInterval(() => {
+                    this.updateUptime();
+                }, 1000);
+            }
+
+            setupSocketEvents() {
+                this.socket.onopen = () => {
+                    console.log('[App] WebSocket connected');
+                    this.isConnected = true;
+                    this.updateConnectionStatus(true);
+                };
+
+                this.socket.onmessage = (event) => {
+                    this.messageCount++;
+                    this.elements.messageCount.textContent = this.messageCount;
+
+                    const message = JSON.parse(event.data);
+                    this.handleMessage(message);
+                };
+
+                this.socket.onclose = () => {
+                    console.log('[App] WebSocket disconnected');
+                    this.isConnected = false;
+                    this.updateConnectionStatus(false);
+
+                    // Auto reconnect
+                    if (this.elements.stopBtn.disabled === false) {
+                        this.reconnectCount++;
+                        this.elements.reconnectCount.textContent = this.reconnectCount;
+                        setTimeout(() => {
+                            if (!this.isConnected) {
+                                this.socket.connect();
+                            }
+                        }, 3000);
+                    }
+                };
+
+                this.socket.onerror = (error) => {
+                    console.error('[App] WebSocket error:', error);
+                };
+
+                // Start connection
+                this.socket.connect();
+            }
+
+            handleMessage(message) {
+                if (message.type !== 'gps_update') return;
+
+                const vehicle = this.vehicleManager.addVehicle(message);
+                const result = this.vehicleManager.updateVehicle(message.vehicleId, message.data);
+
+                if (result) {
+                    this.mapController.updateVehicle(result.vehicle, result.oldData);
+
+                    // Check for speeding
+                    if (result.vehicle.speed > 80) {
+                        this.alertManager.checkSpeed(result.vehicle);
+                    }
+
+                    this.updateUI();
+                }
+            }
+
+            stopTracking() {
+                if (this.socket) {
+                    this.socket.close();
+                }
+
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                    this.updateInterval = null;
+                }
+
+                this.isConnected = false;
+                this.elements.startBtn.disabled = false;
+                this.elements.stopBtn.disabled = true;
+                this.updateConnectionStatus(false);
+            }
+
+            updateConnectionStatus(connected) {
+                if (connected) {
+                    this.elements.statusDot.classList.add('connected');
+                    this.elements.statusText.textContent = '已连接';
+                    this.elements.connStatus.textContent = '已连接';
+                    this.elements.connStatus.style.color = '#00ff88';
+                } else {
+                    this.elements.statusDot.classList.remove('connected');
+                    this.elements.statusText.textContent = '断开';
+                    this.elements.connStatus.textContent = '断开';
+                    this.elements.connStatus.style.color = '#ff4757';
+                }
+            }
+
+            updateUI() {
+                // Update vehicle count
+                const vehicles = this.vehicleManager.getAllVehicles();
+                this.elements.vehicleCount.textContent = vehicles.length;
+
+                // Update stats
+                const stats = this.vehicleManager.stats;
+                this.elements.avgSpeed.textContent = stats.avgSpeed;
+                this.elements.totalDistance.textContent = stats.totalDistance.toFixed(1);
+                this.elements.maxSpeed.textContent = stats.maxSpeed;
+                this.elements.alertCount.textContent = this.vehicleManager.getAlerts().length;
+
+                // Update vehicle list
+                this.updateVehicleList(vehicles);
+
+                // Update alert list
+                this.updateAlertList();
+
+                // Update chart
+                if (this.messageCount % 5 === 0) { // Update chart every 5 messages
+                    this.chartManager.updateSpeedChart(stats.avgSpeed);
+                }
+
+                // Fit map bounds on first update
+                if (this.messageCount === vehicles.length) {
+                    this.mapController.fitBounds();
+                }
+            }
+
+            updateVehicleList(vehicles) {
+                if (vehicles.length === 0) {
+                    this.elements.vehicleList.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">点击"开始追踪"以加载数据</p>';
+                    return;
+                }
+
+                this.elements.vehicleList.innerHTML = vehicles.map(v => `
+                    <div class="vehicle-card ${v.speed > 80 ? 'speeding' : ''}">
+                        <div class="vehicle-header">
+                            <span class="vehicle-name">${v.name}</span>
+                            <span class="vehicle-status ${v.speed > 80 ? 'speeding' : ''}">
+                                ${v.speed > 80 ? '🚨 超速' : '✓ 正常'}
+                            </span>
+                        </div>
+                        <div class="vehicle-info">
+                            <div class="info-item">速度: <span>${v.speed}</span> km/h</div>
+                            <div class="info-item">方向: <span>${v.heading}</span>°</div>
+                            <div class="info-item">里程: <span>${v.totalDistance.toFixed(1)}</span> km</div>
+                            <div class="info-item">轨迹点: <span>${v.history.length}</span></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateAlertList() {
+                const alerts = this.vehicleManager.getAlerts();
+                if (alerts.length === 0) {
+                    this.elements.alertList.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">暂无警报</p>';
+                    return;
+                }
+
+                this.elements.alertList.innerHTML = alerts.slice(0, 10).map(a => `
+                    <div class="alert-item">
+                        <div class="alert-time">${new Date(a.timestamp).toLocaleTimeString()}</div>
+                        <div class="alert-message">${a.message}</div>
+                    </div>
+                `).join('');
+            }
+
+            updateUptime() {
+                if (!this.startTime) return;
+                const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                this.elements.uptime.textContent = minutes > 0
+                    ? `${minutes}m ${seconds}s`
+                    : `${seconds}s`;
+            }
+
+            showReplayDialog() {
+                const vehicles = this.vehicleManager.getAllVehicles();
+                if (vehicles.length === 0) {
+                    alert('请先开始追踪以收集数据');
+                    return;
+                }
+
+                const vehicleOptions = vehicles.map(v =>
+                    `<option value="${v.id}">${v.name}</option>`
+                ).join('');
+
+                const html = `
+                    <div style="background: #16213e; padding: 20px; border-radius: 8px; min-width: 300px;">
+                        <h3 style="color: #00d9ff; margin-bottom: 15px;">历史轨迹回放</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: #ccc;">选择车辆:</label>
+                            <select id="replayVehicle" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff;">
+                                ${vehicleOptions}
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; color: #ccc;">回放速度:</label>
+                            <select id="replaySpeed" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff;">
+                                <option value="1">1x</option>
+                                <option value="2">2x</option>
+                                <option value="5">5x</option>
+                                <option value="10">10x</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="this.closest('.leaflet-popup-pane').querySelector('.leaflet-popup').remove()" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer;">取消</button>
+                            <button id="startReplay" style="padding: 8px 16px; background: linear-gradient(135deg, #00d9ff, #0099cc); border: none; border-radius: 4px; color: #fff; cursor: pointer;">开始回放</button>
+                        </div>
+                    </div>
+                `;
+
+                // Show as modal
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 3000;';
+                modal.innerHTML = html;
+                document.body.appendChild(modal);
+
+                // Handle start replay
+                modal.querySelector('#startReplay').onclick = () => {
+                    const vehicleId = modal.querySelector('#replayVehicle').value;
+                    const speed = parseInt(modal.querySelector('#replaySpeed').value);
+
+                    const vehicle = this.vehicleManager.getVehicle(vehicleId);
+                    if (vehicle && vehicle.history.length > 1) {
+                        const startTime = vehicle.history[0].timestamp;
+                        const endTime = vehicle.history[vehicle.history.length - 1].timestamp;
+                        this.mapController.startPlayback(vehicleId, startTime, endTime, speed);
+                    }
+
+                    document.body.removeChild(modal);
+                };
+
+                // Close on backdrop click
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                };
+            }
+        }
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new VehicleTrackerApp();
+            console.log('[App] Vehicle tracker initialized');
+        });
+    </script>
+</body>
+</html>
