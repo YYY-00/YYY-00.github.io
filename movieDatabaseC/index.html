@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影数据库</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="#/" class="nav-logo">🎬 电影数据库</a>
+                <div class="nav-menu">
+                    <a href="#/" class="nav-link">首页</a>
+                    <a href="#/watchlist" class="nav-link">观影列表</a>
+                    <a href="#/recommendations" class="nav-link">推荐</a>
+                </div>
+                <div class="nav-actions">
+                    <button id="themeToggle" class="theme-toggle" aria-label="切换主题">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 搜索栏 -->
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索电影...">
+            <div id="searchResults" class="search-results hidden"></div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <main id="mainContent" class="main-content">
+            <!-- 内容由 JavaScript 动态生成 -->
+        </main>
+
+        <!-- 加载指示器 -->
+        <div id="loadingIndicator" class="loading-indicator hidden">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
