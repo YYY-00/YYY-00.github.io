@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频剪辑与音效合成工具</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 音频剪辑与音效合成工具</h1>
+        </header>
+
+        <main>
+            <!-- 文件导入区域 -->
+            <section class="import-section">
+                <h2>导入音频</h2>
+                <input type="file" id="audioFileInput" accept="audio/*" multiple>
+                <button id="importBtn" class="btn btn-primary">选择文件</button>
+                <div id="fileList" class="file-list"></div>
+            </section>
+
+            <!-- 音频列表 -->
+            <section class="audio-list-section">
+                <h2>音频素材</h2>
+                <div id="audioLibrary" class="audio-library"></div>
+            </section>
+
+            <!-- 选中音频编辑区 -->
+            <section class="editor-section" id="editorSection" style="display: none;">
+                <h2>编辑: <span id="currentAudioName"></span></h2>
+
+                <!-- 波形可视化 -->
+                <div class="waveform-container">
+                    <canvas id="waveformCanvas"></canvas>
+                    <div id="selectionOverlay" class="selection-overlay"></div>
+                </div>
+
+                <!-- 时间范围信息 -->
+                <div class="time-info">
+                    <span id="selectionInfo">选择范围: 未选择</span>
+                    <span id="durationInfo"></span>
+                </div>
+
+                <!-- 播放控制 -->
+                <div class="playback-controls">
+                    <button id="playBtn" class="btn">▶ 播放</button>
+                    <button id="pauseBtn" class="btn">⏸ 暂停</button>
+                    <button id="stopBtn" class="btn">⏹ 停止</button>
+                    <button id="playSelectionBtn" class="btn">🎵 播放选中区域</button>
+                </div>
+
+                <!-- 剪辑工具 -->
+                <div class="edit-tools">
+                    <h3>剪辑工具</h3>
+                    <div class="tool-buttons">
+                        <button id="trimBtn" class="btn btn-warning">✂️ 裁剪选中区域</button>
+                        <button id="deleteBtn" class="btn btn-danger">🗑️ 删除选中区域</button>
+                        <button id="duplicateBtn" class="btn btn-info">📋 复制选中区域</button>
+                        <button id="fadeInBtn" class="btn btn-secondary">🔊 淡入</button>
+                        <button id="fadeOutBtn" class="btn btn-secondary">🔉 淡出</button>
+                        <button id="volumeBtn" class="btn btn-secondary">🔈 调整音量</button>
+                    </div>
+                    <div class="volume-control" id="volumeControl" style="display: none;">
+                        <label>音量倍增: <input type="range" id="volumeSlider" min="0" max="3" step="0.1" value="1"></label>
+                        <span id="volumeValue">1.0x</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 音效合成区域 -->
+            <section class="synth-section">
+                <h2>音效合成</h2>
+
+                <div class="synth-tools">
+                    <div class="synth-generator">
+                        <h3>生成器音效</h3>
+                        <div class="synth-buttons">
+                            <button id="genSineBtn" class="btn btn-success">生成正弦波</button>
+                            <button id="genSquareBtn" class="btn btn-success">生成方波</button>
+                            <button id="genSawtoothBtn" class="btn btn-success">生成锯齿波</button>
+                            <button id="genWhiteNoiseBtn" class="btn btn-success">生成白噪声</button>
+                            <button id="genPinkNoiseBtn" class="btn btn-success">生成粉红噪声</button>
+                        </div>
+                    </div>
+
+                    <div class="synth-params">
+                        <h3>参数设置</h3>
+                        <div class="param-group">
+                            <label>时长 (秒): <input type="number" id="synthDuration" value="2" min="0.1" max="60" step="0.1"></label>
+                            <label>频率 (Hz): <input type="number" id="synthFrequency" value="440" min="20" max="20000"></label>
+                            <label>采样率: <input type="number" id="synthSampleRate" value="44100" step="100"></label>
+                        </div>
+                    </div>
+
+                    <div class="env-generator">
+                        <h3>包络生成</h3>
+                        <div class="env-buttons">
+                            <button id="genSimpleBeep" class="btn btn-info">简单哔声</button>
+                            <button id="genPing" class="btn btn-info">Ping 音</button>
+                            <button id="genKick" class="btn btn-info">底鼓</button>
+                            <button id="genSnare" class="btn btn-info">军鼓</button>
+                            <button id="genHiHat" class="btn btn-info">踩镲</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="synthPreview" class="synth-preview"></div>
+            </section>
+
+            <!-- 导出区域 -->
+            <section class="export-section">
+                <h2>导出</h2>
+                <button id="exportBtn" class="btn btn-primary">💾 导出当前音频</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>基于 Web Audio API 构建 | 支持常见音频格式</p>
+        </footer>
+    </div>
+
+    <script src="soundSynthesizer.js"></script>
+    <script src="audioProcessor.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

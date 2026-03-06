@@ -1,0 +1,11 @@
+{
+  "name": "audio-editor",
+  "version": "1.0.0",
+  "description": "音频剪辑与音效合成工具",
+  "scripts": {
+    "start": "npx http-server -p 8000"
+  },
+  "keywords": ["audio", "editor", "synthesizer", "web-audio"],
+  "author": "",
+  "license": "MIT"
+}
