@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影数据库 - Movie Database</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h1>🎬 电影数据库</h1>
+                </div>
+                <div class="nav-center">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索电影...">
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <button id="watchlistBtn" class="nav-btn">
+                        <span class="watchlist-icon">📋</span>
+                        <span id="watchlistCount">0</span>
+                    </button>
+                    <button id="recommendationsBtn" class="nav-btn">
+                        <span>🎯</span>
+                        <span>推荐</span>
+                    </button>
+                    <button id="darkModeBtn" class="nav-btn">
+                        <span id="darkModeIcon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main id="mainContent">
+            <!-- Home Page -->
+            <div id="homePage" class="page active">
+                <!-- Popular Movies -->
+                <section class="movie-section">
+                    <div class="section-header">
+                        <h2>🔥 热门电影</h2>
+                        <div class="scroll-buttons">
+                            <button class="scroll-btn scroll-left" data-target="popular"></button>
+                            <button class="scroll-btn scroll-right" data-target="popular"></button>
+                        </div>
+                    </div>
+                    <div id="popularMovies" class="movie-scroll-container"></div>
+                </section>
+
+                <!-- Top Rated Movies -->
+                <section class="movie-section">
+                    <div class="section-header">
+                        <h2>⭐ 评分最高</h2>
+                        <div class="scroll-buttons">
+                            <button class="scroll-btn scroll-left" data-target="topRated"></button>
+                            <button class="scroll-btn scroll-right" data-target="topRated"></button>
+                        </div>
+                    </div>
+                    <div id="topRatedMovies" class="movie-scroll-container"></div>
+                </section>
+
+                <!-- Upcoming Movies -->
+                <section class="movie-section">
+                    <div class="section-header">
+                        <h2>🎬 即将上映</h2>
+                        <div class="scroll-buttons">
+                            <button class="scroll-btn scroll-left" data-target="upcoming"></button>
+                            <button class="scroll-btn scroll-right" data-target="upcoming"></button>
+                        </div>
+                    </div>
+                    <div id="upcomingMovies" class="movie-scroll-container"></div>
+                </section>
+            </div>
+
+            <!-- Movie Details Page -->
+            <div id="detailsPage" class="page">
+                <button id="backBtn" class="back-btn">← 返回</button>
+                <div id="movieDetails"></div>
+            </div>
+
+            <!-- Watchlist Page -->
+            <div id="watchlistPage" class="page">
+                <div class="page-header">
+                    <h1>📋 我的观影列表</h1>
+                    <button id="watchlistBackBtn" class="back-btn">← 返回</button>
+                </div>
+                <div id="watchlistMovies" class="movie-grid infinite-scroll"></div>
+                <div id="watchlistLoading" class="loading-spinner"></div>
+            </div>
+
+            <!-- Recommendations Page -->
+            <div id="recommendationsPage" class="page">
+                <div class="page-header">
+                    <h1>🎯 为您推荐</h1>
+                    <button id="recommendationsBackBtn" class="back-btn">← 返回</button>
+                </div>
+                <div id="recommendationMovies" class="movie-grid infinite-scroll"></div>
+                <div id="recommendationsLoading" class="loading-spinner"></div>
+            </div>
+        </main>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="cache.js"></script>
+    <script src="recommendations.js"></script>
+    <script src="watchlist.js"></script>
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
