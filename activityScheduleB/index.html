@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Booking System - Home</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        EventBooker
+      </a>
+      <nav class="nav">
+        <a href="index.html" class="active">Events</a>
+        <a href="events.html">Browse All</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Discover Amazing Events</h1>
+        <p>Book tickets for concerts, sports, theater, and more. Your next unforgettable experience is just a click away.</p>
+        <div class="hero-actions">
+          <a href="events.html" class="btn btn-primary btn-lg">Browse Events</a>
+          <a href="#calendar" class="btn btn-secondary btn-lg">View Calendar</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200" alt="Events">
+      </div>
+    </section>
+
+    <!-- Calendar Section -->
+    <section class="section" id="calendar-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Find Events by Date</h2>
+          <p>Click on any date to see scheduled events</p>
+        </div>
+        <div id="calendar"></div>
+      </div>
+    </section>
+
+    <!-- Featured Events Section -->
+    <section class="section bg-light">
+      <div class="container">
+        <div class="section-header">
+          <h2>Featured Events</h2>
+          <p>Don't miss out on these popular events</p>
+        </div>
+        <div id="featured-events" class="events-grid"></div>
+        <div class="text-center mt-4">
+          <a href="events.html" class="btn btn-primary">View All Events</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Browse by Category</h2>
+        </div>
+        <div class="categories-grid" id="categories-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="grid grid-cols-4" style="gap: var(--spacing-xl);">
+        <div>
+          <h4>EventBooker</h4>
+          <p style="color: var(--gray-600); margin-top: var(--spacing-md);">Your one-stop destination for booking tickets to amazing events.</p>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul style="list-style: none; margin-top: var(--spacing-md);">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="admin.html">Admin</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Categories</h4>
+          <ul style="list-style: none; margin-top: var(--spacing-md);">
+            <li><a href="events.html?category=concert">Concerts</a></li>
+            <li><a href="events.html?category=sports">Sports</a></li>
+            <li><a href="events.html?category=theater">Theater</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <p style="color: var(--gray-600); margin-top: var(--spacing-md);">support@eventbooker.com</p>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: var(--spacing-xl); padding-top: var(--spacing-lg); border-top: 1px solid var(--gray-200); color: var(--gray-500);">
+        &copy; 2026 EventBooker. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/timezone.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/events.js"></script>
+
+  <script>
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load featured events
+      loadFeaturedEvents();
+      loadCategories();
+    });
+
+    function loadFeaturedEvents() {
+      const featured = app.data?.events.filter(e => e.featured).slice(0, 4) || [];
+      const container = document.getElementById('featured-events');
+
+      container.innerHTML = featured.map(event => {
+        const timeInfo = app.timezone.getEventTimeInfo(event);
+        return `
+          <div class="card event-card" style="cursor: pointer;" onclick="window.location.href='booking.html?eventId=${event.id}'">
+            <img src="${event.image}" alt="${event.name}" class="card-image">
+            <div class="card-body">
+              <span class="badge badge-primary">${event.category}</span>
+              <h3 style="margin: var(--spacing-sm) 0;">${app.utils?.truncate(event.name, 40)}</h3>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm); color: var(--gray-600); font-size: 0.875rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                ${timeInfo.localDateOnly}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-md);">
+                <span style="font-weight: 700; font-size: 1.5rem; color: var(--primary);">${app.utils?.formatCurrency(event.price)}</span>
+                <span style="color: var(--gray-500); font-size: 0.875rem;">${event.capacity - event.bookedSeats} left</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadCategories() {
+      const categories = app.data?.categories || [];
+      const container = document.getElementById('categories-grid');
+
+      container.innerHTML = categories.map(cat => `
+        <a href="events.html?category=${cat.id}" class="category-card">
+          <span class="category-icon">${cat.icon}</span>
+          <span class="category-name">${cat.name}</span>
+        </a>
+      `).join('');
+    }
+  </script>
+
+  <style>
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-2xl);
+      align-items: center;
+      padding: var(--spacing-2xl) 0;
+    }
+
+    .hero-content h1 {
+      font-size: 3rem;
+      margin-bottom: var(--spacing-lg);
+      color: var(--gray-900);
+    }
+
+    .hero-content p {
+      font-size: 1.25rem;
+      color: var(--gray-600);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .hero-image {
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .hero-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .section {
+      padding: var(--spacing-2xl) 0;
+    }
+
+    .section.bg-light {
+      background: var(--gray-50);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .section-header h2 {
+      font-size: 2rem;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .section-header p {
+      color: var(--gray-600);
+    }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-lg);
+    }
+
+    .category-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-xl);
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      text-decoration: none;
+      color: var(--gray-800);
+      transition: all 0.2s;
+    }
+
+    .category-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .category-icon {
+      font-size: 3rem;
+    }
+
+    .category-name {
+      font-weight: 600;
+    }
+
+    .footer {
+      background: var(--gray-900);
+      color: white;
+      padding: var(--spacing-2xl) 0;
+      margin-top: var(--spacing-2xl);
+    }
+
+    .footer h4 {
+      color: white;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .footer a {
+      color: var(--gray-400);
+      display: block;
+      padding: var(--spacing-xs) 0;
+    }
+
+    .footer a:hover {
+      color: white;
+    }
+  </style>
+</body>
+</html>

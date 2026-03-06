@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Events - Event Booking System</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        EventBooker
+      </a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="events.html" class="active">Browse All</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content" style="padding-top: var(--spacing-xl);">
+    <div class="container">
+      <div class="section-header">
+        <h1>Browse All Events</h1>
+        <p>Find your next experience</p>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 250px 1fr; gap: var(--spacing-xl);">
+        <!-- Filters Sidebar -->
+        <aside id="events-filters">
+          <div class="card">
+            <div class="card-header">
+              <h3>Filters</h3>
+            </div>
+            <div class="card-body">
+              <!-- Search -->
+              <div class="form-group">
+                <label class="form-label">Search</label>
+                <input type="text" id="filter-search" class="form-input" placeholder="Event name, venue...">
+              </div>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select id="filter-category" class="form-select">
+                  <option value="">All Categories</option>
+                </select>
+              </div>
+
+              <!-- Venue -->
+              <div class="form-group">
+                <label class="form-label">Venue</label>
+                <select id="filter-venue" class="form-select">
+                  <option value="">All Venues</option>
+                </select>
+              </div>
+
+              <!-- Date -->
+              <div class="form-group">
+                <label class="form-label">Specific Date</label>
+                <input type="date" id="filter-date" class="form-input">
+              </div>
+
+              <!-- Featured -->
+              <div class="form-group">
+                <label class="form-checkbox">
+                  <input type="checkbox" id="filter-featured">
+                  Featured only
+                </label>
+              </div>
+
+              <!-- Sort -->
+              <div class="form-group">
+                <label class="form-label">Sort By</label>
+                <select id="filter-sort" class="form-select">
+                  <option value="date-asc">Date (Earliest First)</option>
+                  <option value="date-desc">Date (Latest First)</option>
+                  <option value="price-asc">Price (Low to High)</option>
+                  <option value="price-desc">Price (High to Low)</option>
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                </select>
+              </div>
+
+              <div class="flex" style="gap: var(--spacing-sm);">
+                <button id="filter-reset" class="btn btn-secondary btn-sm" style="flex: 1;">Reset</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Events List -->
+        <div id="events-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: var(--spacing-2xl);">
+    <div class="container">
+      <div style="text-align: center; color: var(--gray-400);">
+        &copy; 2026 EventBooker. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/timezone.js"></script>
+  <script src="js/events.js"></script>
+
+  <style>
+    .main-content {
+      min-height: calc(100vh - 200px);
+    }
+
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--spacing-lg);
+    }
+
+    .event-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+    }
+
+    .event-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .event-card-image {
+      position: relative;
+      height: 160px;
+      overflow: hidden;
+    }
+
+    .event-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .event-card:hover .event-card-image img {
+      transform: scale(1.05);
+    }
+
+    .event-card-overlay {
+      position: absolute;
+      top: var(--spacing-sm);
+      right: var(--spacing-sm);
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+
+    .event-featured-badge {
+      position: absolute;
+      top: var(--spacing-sm);
+      left: var(--spacing-sm);
+      background: var(--warning);
+      color: white;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .event-card-body {
+      padding: var(--spacing-md);
+    }
+
+    .event-card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .event-card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    .meta-item svg {
+      flex-shrink: 0;
+    }
+
+    .event-card-description {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      line-height: 1.5;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .event-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .event-card-price {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .price-label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+    }
+
+    .price-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .event-card-availability {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    .event-card-actions {
+      padding: var(--spacing-md);
+      background: var(--gray-50);
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .events-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-lg);
+      padding-bottom: var(--spacing-md);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .events-count {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: baseline;
+    }
+
+    .count-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .count-label {
+      color: var(--gray-600);
+    }
+
+    .events-empty {
+      text-align: center;
+      padding: var(--spacing-2xl);
+      color: var(--gray-500);
+    }
+
+    .events-empty svg {
+      color: var(--gray-400);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-xl);
+      padding-top: var(--spacing-lg);
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .pagination-btn {
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--gray-300);
+      background: white;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--gray-100);
+    }
+
+    .pagination-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-ellipsis {
+      padding: var(--spacing-sm);
+      color: var(--gray-500);
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      aside {
+        order: 1;
+      }
+
+      #events-list {
+        order: 2;
+      }
+
+      .events-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</body>
+</html>

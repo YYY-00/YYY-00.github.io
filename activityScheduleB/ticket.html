@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Ticket - Event Booking System</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/ticket.css">
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        EventBooker
+      </a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="events.html">Browse All</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content" style="padding-top: var(--spacing-xl);">
+    <div class="container">
+      <div class="section-header">
+        <h1>Your Ticket</h1>
+        <p>Present this ticket (printed or on your phone) at the event</p>
+      </div>
+
+      <div id="ticket-container">
+        <div class="ticket-loading">
+          <div class="spinner"></div>
+          <p>Loading your ticket...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: var(--spacing-2xl);">
+    <div class="container">
+      <div style="text-align: center; color: var(--gray-400);">
+        &copy; 2026 EventBooker. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/timezone.js"></script>
+  <script src="js/ticket.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Seats - Event Booking System</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/seats.css">
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        EventBooker
+      </a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="events.html">Browse All</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content" style="padding-top: var(--spacing-xl);">
+    <div class="container">
+      <div class="section-header">
+        <h1>Select Your Seats</h1>
+        <p id="event-subtitle">Choose your preferred seats from the map below</p>
+      </div>
+
+      <div class="seat-selection-container">
+        <!-- Seat Map -->
+        <div id="seat-map-container"></div>
+
+        <!-- Booking Panel -->
+        <aside class="booking-panel">
+          <div class="booking-panel-header">
+            <h3>Your Selection</h3>
+          </div>
+          <div class="booking-panel-body">
+            <div class="booking-event-info">
+              <h4 class="booking-event-name" id="booking-event-name">Loading...</h4>
+              <div class="booking-event-details" id="booking-event-details"></div>
+            </div>
+
+            <div class="selected-seats-section">
+              <h4 class="selected-seats-title">Selected Seats</h4>
+              <div class="selected-seats-list" id="selected-seats-list">
+                <p class="empty-seats-message">No seats selected</p>
+              </div>
+              <div id="max-seats-warning" class="max-seats-warning" style="display: none;"></div>
+            </div>
+
+            <div class="booking-summary">
+              <div class="summary-row">
+                <span class="summary-label">Seats</span>
+                <span class="summary-value" id="total-seats">0</span>
+              </div>
+              <div class="summary-row total">
+                <span class="summary-label">Total</span>
+                <span class="summary-value" id="total-price">$0.00</span>
+              </div>
+            </div>
+
+            <form id="booking-form" class="booking-form">
+              <div class="form-group">
+                <label class="form-label" for="booking-email">Email Address</label>
+                <input type="email" id="booking-email" class="form-input"
+                       placeholder="your@email.com" required>
+                <small style="color: var(--gray-500); font-size: 0.875rem;">
+                  We'll send your ticket to this email
+                </small>
+              </div>
+
+              <button type="submit" id="booking-submit-btn" class="btn btn-primary btn-block" disabled>
+                Complete Booking
+              </button>
+
+              <a href="events.html" class="btn btn-secondary btn-block" style="margin-top: var(--spacing-sm);">
+                Cancel
+              </a>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: var(--spacing-2xl);">
+    <div class="container">
+      <div style="text-align: center; color: var(--gray-400);">
+        &copy; 2026 EventBooker. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/timezone.js"></script>
+  <script src="js/seats.js"></script>
+
+  <script>
+    // Update booking panel with event info after seat map loads
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const event = app.seats?.currentEvent;
+        if (event) {
+          const timeInfo = app.timezone.getEventTimeInfo(event);
+
+          document.getElementById('booking-event-name').textContent = event.name;
+          document.getElementById('booking-event-details').innerHTML = `
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              ${timeInfo.localDateOnly} at ${timeInfo.localTimeOnly}
+            </div>
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              ${event.venue}
+            </div>
+          `;
+          document.getElementById('event-subtitle').textContent =
+            `${event.name} at ${event.venue} - ${timeInfo.localDateOnly}`;
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
