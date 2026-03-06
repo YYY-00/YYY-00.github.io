@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>两个物体同时下落实验 - 物理科普</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: var(--bg-light);
+            padding: 30px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+        }
+
+        .control-section h3 {
+            color: var(--text-dark);
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            color: var(--text-gray);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .control-group select:focus,
+        .control-group input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border-color);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .object-preview {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .object-preview-item {
+            flex: 1;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .object-preview-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .object-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .object-name {
+            font-size: 0.85em;
+            color: var(--text-gray);
+        }
+
+        /* 实验显示区 */
+        .experiment-area {
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            background: white;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: linear-gradient(to bottom, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            min-height: 450px;
+            border: 3px solid var(--border-color);
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, #8b5a2b 0%, #6b4423 100%);
+            border-top: 4px solid #4a7c23;
+        }
+
+        .ruler {
+            position: absolute;
+            left: 10px;
+            top: 60px;
+            bottom: 70px;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .ruler-mark {
+            display: flex;
+            align-items: center;
+            font-size: 0.75em;
+            color: var(--text-gray);
+        }
+
+        .ruler-mark::before {
+            content: '';
+            width: 15px;
+            height: 1px;
+            background: var(--text-gray);
+            margin-right: 5px;
+        }
+
+        .falling-object {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            transition: none;
+            will-change: transform;
+        }
+
+        .falling-object.ball {
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .falling-object.feather {
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
+        }
+
+        .falling-object.left {
+            left: 30%;
+        }
+
+        .falling-object.right {
+            right: 30%;
+        }
+
+        .position-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7em;
+            color: var(--text-dark);
+            font-weight: 600;
+            white-space: nowrap;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* 控制按钮 */
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-start {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        /* 结果展示区 */
+        .results-area {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .result-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .result-card h4 {
+            color: var(--text-gray);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .result-card .result-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .result-card .result-unit {
+            font-size: 0.8em;
+            color: var(--text-gray);
+            font-weight: 400;
+        }
+
+        .conclusion {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .conclusion h4 {
+            color: #92400e;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .conclusion p {
+            color: #78350f;
+            line-height: 1.6;
+        }
+
+        /* 真空指示器 */
+        .vacuum-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: none;
+        }
+
+        .vacuum-indicator.active {
+            display: block;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .control-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .falling-object.left,
+            .falling-object.right {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .falling-object.right {
+                left: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚛️ 两个物体同时下落实验</h1>
+            <p>探索重力加速度、空气阻力对不同物体下落的影响</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧控制面板 -->
+            <div class="control-panel">
+                <div class="control-section">
+                    <h3>📦 物体设置</h3>
+                    <div class="control-group">
+                        <label>物体A类型：</label>
+                        <select id="objectTypeA">
+                            <option value="ball">小球 🔴</option>
+                            <option value="feather">羽毛 🪶</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>物体B类型：</label>
+                        <select id="objectTypeB">
+                            <option value="ball">小球 🔴</option>
+                            <option value="feather" selected>羽毛 🪶</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>物体A重量 (克)：</label>
+                        <div class="slider-container">
+                            <input type="range" id="weightA" min="1" max="100" value="50">
+                            <span class="slider-value" id="weightAValue">50g</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>物体B重量 (克)：</label>
+                        <div class="slider-container">
+                            <input type="range" id="weightB" min="1" max="100" value="5">
+                            <span class="slider-value" id="weightBValue">5g</span>
+                        </div>
+                    </div>
+                    <div class="object-preview">
+                        <div class="object-preview-item">
+                            <div class="object-icon" id="iconA">🔴</div>
+                            <div class="object-name">物体A</div>
+                        </div>
+                        <div class="object-preview-item">
+                            <div class="object-icon" id="iconB">🪶</div>
+                            <div class="object-name">物体B</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>🌍 环境设置</h3>
+                    <div class="control-group">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="vacuum">
+                            <span>真空环境（无空气阻力）</span>
+                        </label>
+                    </div>
+                    <div class="control-group" id="dragGroup">
+                        <label>风阻系数：</label>
+                        <div class="slider-container">
+                            <input type="range" id="dragCoeff" min="0.1" max="2" step="0.1" value="0.5">
+                            <span class="slider-value" id="dragCoeffValue">0.5</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>重力加速度 (m/s²)：</label>
+                        <div class="slider-container">
+                            <input type="range" id="gravity" min="1" max="20" step="0.1" value="9.8">
+                            <span class="slider-value" id="gravityValue">9.8</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧实验显示区 -->
+            <div class="experiment-area">
+                <div class="canvas-container" id="canvasContainer">
+                    <div class="vacuum-indicator" id="vacuumIndicator">⚠️ 真空环境</div>
+                    <div class="ruler" id="ruler"></div>
+                    <div class="ground"></div>
+                    <div class="falling-object left" id="objectA">
+                        <span class="emoji">🔴</span>
+                        <div class="position-label">物体A</div>
+                    </div>
+                    <div class="falling-object right" id="objectB">
+                        <span class="emoji">🪶</span>
+                        <div class="position-label">物体B</div>
+                    </div>
+                </div>
+
+                <div class="control-buttons">
+                    <button class="btn btn-start" id="startBtn">▶ 开始实验</button>
+                    <button class="btn btn-reset" id="resetBtn">↺ 重置</button>
+                </div>
+
+                <div class="results-area">
+                    <div class="result-card">
+                        <h4>物体A落地时间</h4>
+                        <div class="result-value" id="timeA">-- <span class="result-unit">秒</span></div>
+                    </div>
+                    <div class="result-card">
+                        <h4>物体B落地时间</h4>
+                        <div class="result-value" id="timeB">-- <span class="result-unit">秒</span></div>
+                    </div>
+                    <div class="conclusion">
+                        <h4>📚 实验结论</h4>
+                        <p id="conclusionText">点击"开始实验"按钮，观察两个物体的下落过程，探索重力加速度的奥秘！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const objectTypeA = document.getElementById('objectTypeA');
+        const objectTypeB = document.getElementById('objectTypeB');
+        const weightA = document.getElementById('weightA');
+        const weightB = document.getElementById('weightB');
+        const vacuum = document.getElementById('vacuum');
+        const dragCoeff = document.getElementById('dragCoeff');
+        const gravity = document.getElementById('gravity');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const objectA = document.getElementById('objectA');
+        const objectB = document.getElementById('objectB');
+        const timeA = document.getElementById('timeA');
+        const timeB = document.getElementById('timeB');
+        const conclusionText = document.getElementById('conclusionText');
+        const vacuumIndicator = selected= document.getElementById('vacuumIndicator');
+        const iconA = document.getElementById('iconA');
+        const iconB = document.getElementById('iconB');
+        const dragGroup = document.getElementById('dragGroup');
+        const ruler = document.getElementById('ruler');
+        const canvasContainer = document.getElementById('canvasContainer');
+
+        // 物理模拟状态
+        let animationId = null;
+        let startTime = null;
+        let physicsState = {
+            objectA: { y: 0, v: 0, landed: false, landTime: null },
+            objectB: { y: 0, v: 0, landed: false, landTime: null }
+        };
+
+        // 常量
+        const PIXELS_PER_METER = 100;
+        const OBJECT_SIZE = 40;
+        const GROUND_HEIGHT = 60;
+
+        // 物体属性映射
+        const objectProperties = {
+            ball: {
+                emoji: '🔴',
+                dragMultiplier: 1,
+                area: 0.01 // 球形截面积(m²)
+            },
+            feather: {
+                emoji: '🪶',
+                dragMultiplier: 5, // 羽毛受空气阻力影响更大
+                area: 0.005 // 羽毛截面积(m²)
+            }
+        };
+
+        // 初始化标尺
+        function initRuler() {
+            const containerHeight = canvasContainer.offsetHeight - GROUND_HEIGHT - 60;
+            const maxMeters = Math.floor(containerHeight / PIXELS_PER_METER);
+            let rulerHTML = '';
+            for (let i = maxMeters; i >= 0; i--) {
+                const position = (containerHeight - i * PIXELS_PER_METER) / containerHeight * 100;
+                rulerHTML += `<div class="ruler-mark" style="position: absolute; bottom: ${position}%">${i}m</div>`;
+            }
+            ruler.innerHTML = rulerHTML;
+        }
+
+        // 更新UI显示
+        function updateUI() {
+            // 更新滑块值显示
+            document.getElementById('weightAValue').textContent = weightA.value + 'g';
+            document.getElementById('weightBValue').textContent = weightB.value + 'g';
+            document.getElementById('dragCoeffValue').textContent = dragCoeff.value;
+            document.getElementById('gravityValue').textContent = gravity.value;
+
+            // 更新物体图标
+            const typeA = objectTypeA.value;
+            const typeB = objectTypeB.value;
+            iconA.textContent = objectProperties[typeA].emoji;
+            iconB.textContent = objectProperties[typeB].emoji;
+            objectA.querySelector('.emoji').textContent = objectProperties[typeA].emoji;
+            objectB.querySelector('.emoji').textContent = objectProperties[typeB].emoji;
+
+            // 更新真空指示器
+            vacuumIndicator.classList.toggle('active', vacuum.checked);
+            dragGroup.style.opacity = vacuum.checked ? '0.5' : '1';
+            dragGroup.style.pointerEvents = vacuum.checked ? 'none' : 'auto';
+        }
+
+        // 物理计算
+        function calculatePhysics(deltaTime) {
+            const g = parseFloat(gravity.value);
+            const isVacuum = vacuum.checked;
+            const Cd = parseFloat(dragCoeff.value);
+            const massA = parseFloat(weightA.value) / 1000; // 转换为kg
+            const massB = parseFloat(weightB.value) / 1000;
+            const propA = objectProperties[objectTypeA.value];
+            const propB = objectProperties[objectTypeB.value];
+
+            // 计算空气阻力 (简化公式: F = 0.5 * ρ * v² * Cd * A)
+            // 简化为 F = k * v²，其中k包含所有系数
+            const airDensity = 1.225; // kg/m³ (海平面标准大气压)
+            const dragKA = isVacuum ? 0 : 0.5 * airDensity * Cd * propA.dragMultiplier * propA.area;
+            const dragKB = isVacuum ? 0 : 0.5 * airDensity * Cd * propB.dragMultiplier * propB.area;
+
+            // 物体A
+            if (!physicsState.objectA.landed) {
+                const velocityA = physicsState.objectA.v;
+                const dragA = dragKA * velocityA * velocityA;
+                const netForceA = massA * g - dragA;
+                const accelerationA = Math.max(0, netForceA / massA); //加速度不为负
+
+                physicsState.objectA.v += accelerationA * deltaTime;
+                physicsState.objectA.y += physicsState.objectA.v * deltaTime * PIXELS_PER_METER;
+            }
+
+            // 物体B
+            if (!physicsState.objectB.landed) {
+                const velocityB = physicsState.objectB.v;
+                const dragB = dragKB * velocityB * velocityB;
+                const netForceB = massB * g - dragB;
+                const accelerationB = Math.max(0, netForceB / massB);
+
+                physicsState.objectB.v += accelerationB * deltaTime;
+                physicsState.objectB.y += physicsState.objectB.v * deltaTime * PIXELS_PER_METER;
+            }
+
+            // 检查是否落地
+            const containerHeight = canvasContainer.offsetHeight - GROUND_HEIGHT - OBJECT_SIZE - 60;
+
+            if (!physicsState.objectA.landed && physicsState.objectA.y >= containerHeight) {
+                physicsState.objectA.y = containerHeight;
+                physicsState.objectA.landed = true;
+                physicsState.objectA.landTime = (Date.now() - startTime) / 1000;
+                timeA.innerHTML = physicsState.objectA.landTime.toFixed(3) + ' <span class="result-unit">秒</span>';
+            }
+
+            if (!physicsState.objectB.landed && physicsState.objectB.y >= containerHeight) {
+                physicsState.objectB.y = containerHeight;
+                physicsState.objectB.landed = true;
+                physicsState.objectB.landTime = (Date.now() - startTime) / 1000;
+                timeB.innerHTML = physicsState.objectB.landTime.toFixed(3) + ' <span class="result-unit">秒</span>';
+            }
+        }
+
+        // 渲染位置
+        function render() {
+            objectA.style.transform = `translateY(${physicsState.objectA.y}px)`;
+            objectB.style.transform = `translateY(${physicsState.objectB.y}px)`;
+        }
+
+        // 检查实验是否结束
+        function isExperimentComplete() {
+            return physicsState.objectA.landed && physicsState.objectB.landed;
+        }
+
+        // 生成实验结论
+        function generateConclusion() {
+            const timeDiff = Math.abs(physicsState.objectA.landTime - physicsState.objectB.landTime);
+            const isVacuum = vacuum.checked;
+            const typeA = objectTypeA.value;
+            const typeB = objectTypeB.value;
+
+            let conclusion = '';
+
+            if (isVacuum) {
+                if (timeDiff < 0.01) {
+                    conclusion = `在真空环境中，${objectProperties[typeA].emoji}和${objectProperties[typeB].emoji}几乎同时落地！这验证了伽利略的经典实验：重力加速度与物体质量、形状无关，所有物体在真空中下落速度相同。`;
+                } else {
+                    conclusion = `在真空环境中，两个物体几乎同时落地（时间差异仅${timeDiff.toFixed(3)}秒，可忽略）。这证明了重力加速度对所有物体都是相同的。`;
+                }
+            } else {
+                if (timeDiff < 0.05) {
+                    conclusion = `在有空气阻力的环境中，${objectProperties[typeA].emoji}和${objectProperties[typeB].emoji}几乎同时落地。这表明在当前参数下，空气阻力对两个物体的影响相似。`;
+                } else {
+                    const winner = physicsState.objectA.landTime < physicsState.objectB.landTime ? 'A' : 'B';
+                    const winnerEmoji = winner === 'A' ? objectProperties[typeA].emoji : objectProperties[typeB].emoji;
+                    const loserEmoji = winner === 'A' ? objectProperties[typeB].emoji : objectProperties[typeA].emoji;
+
+                    conclusion = `在有空气阻力的环境中，${winnerEmoji}先落地，${loserEmoji}落后了${timeDiff.toFixed(3)}秒。这说明空气阻力对不同形状、重量的物体影响不同：羽毛受力面积大、重量轻，受空气阻力影响更明显，下落更慢。`;
+                }
+            }
+
+            conclusionText.textContent = conclusion;
+        }
+
+        // 动画循环
+        function animate() {
+            if (!startTime) startTime = Date.now();
+
+            const currentTime = Date.now();
+            const deltaTime = Math.min((currentTime - (startTime + (physicsState.objectA.landTime || 0) * 1000)) / 1000, 0.05);
+
+            calculatePhysics(deltaTime);
+            render();
+
+            if (!isExperimentComplete()) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                generateConclusion();
+                startBtn.disabled = false;
+            }
+        }
+
+        // 开始实验
+        function startExperiment() {
+            // 重置状态
+            physicsState = {
+                objectA: { y: 0, v: 0, landed: false, landTime: null },
+                objectB: { y: 0, v: 0, landed: false, landTime: null }
+            };
+            startTime = null;
+
+            // 重置结果显示
+            timeA.innerHTML = '-- <span class="result-unit">秒</span>';
+            timeB.innerHTML = '-- <span class="result-unit">秒</span>';
+            conclusionText.textContent = '实验进行中...';
+
+            // 禁用开始按钮
+            startBtn.disabled = true;
+
+            // 开始动画
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            animate();
+        }
+
+        // 重置实验
+        function resetExperiment() {
+            // 停止动画
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            // 重置状态
+            physicsState = {
+                objectA: { y: 0, v: 0, landed: false, landTime: null },
+                objectB: { y: 0, v: 0, landed: false, landTime: null }
+            };
+            startTime = null;
+
+            // 重置UI
+            render();
+            startBtn.disabled = false;
+            timeA.innerHTML = '-- <span class="result-unit">秒</span>';
+            timeB.innerHTML = '-- <span class="result-unit">秒</span>';
+            conclusionText.textContent = '点击"开始实验"按钮，观察两个物体的下落过程，探索重力加速度的奥秘！';
+        }
+
+        // 事件监听器
+        objectTypeA.addEventListener('change', updateUI);
+        objectTypeB.addEventListener('change', updateUI);
+        weightA.addEventListener('input', () => {
+            updateUI();
+            resetExperiment();
+        });
+        weightB.addEventListener('input', () => {
+            updateUI();
+            resetExperiment();
+        });
+        vacuum.addEventListener('change', () => {
+            updateUI();
+            resetExperiment();
+        });
+        dragCoeff.addEventListener('input', () => {
+            updateUI();
+            resetExperiment();
+        });
+        gravity.addEventListener('input', () => {
+            updateUI();
+            resetExperiment();
+        });
+
+        startBtn.addEventListener('click', startExperiment);
+        resetBtn.addEventListener('click', resetExperiment);
+
+        // 窗口大小改变时重新初始化标尺
+        window.addEventListener('resize', () => {
+            initRuler();
+            resetExperiment();
+        });
+
+        // 初始化
+        updateUI();
+        initRuler();
+    </script>
+</body>
+</html>
