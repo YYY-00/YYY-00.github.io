@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>七巧板拼图游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pieces-panel, .puzzle-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .pieces-canvas-container {
+            position: relative;
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            background: #f8f9fa;
+        }
+
+        .puzzle-canvas-container {
+            position: relative;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            background: #f0f4ff;
+        }
+
+        .controls-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .puzzle-selector {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            max-width: 600px;
+        }
+
+        .puzzle-btn {
+            padding: 10px 20px;
+            border: 2px solid white;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .puzzle-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .puzzle-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 800px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .instructions ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            z-index: 1000;
+            display: none;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Control buttons styling */
+        .rotate-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .flip-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .check-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 900px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧩 七巧板拼图游戏</h1>
+        <p>拖动、旋转、翻转七块拼板，完成各种有趣的图案！</p>
+    </div>
+
+    <div class="puzzle-selector">
+        <button class="puzzle-btn active" data-puzzle="cat">🐱 猫</button>
+        <button class="puzzle-btn" data-puzzle="bird">🐦 鸟</button>
+        <button class="puzzle-btn" data-puzzle="house">🏠 房子</button>
+        <button class="puzzle-btn" data-puzzle="boat">⛵ 船</button>
+        <button class="puzzle-btn" data-puzzle="heart">❤️ 心形</button>
+        <button class="puzzle-btn" data-puzzle="arrow">➡️ 箭头</button>
+        <button class="puzzle-btn" data-puzzle="diamond">💎 菱形</button>
+        <button class="puzzle-btn" data-puzzle="runner">🏃 跑步者</button>
+    </div>
+
+    <div class="game-container">
+        <div class="pieces-panel">
+            <div class="panel-title">🎨 拼图区域</div>
+            <div class="pieces-canvas-container">
+                <canvas id="piecesCanvas" width="400" height="400"></canvas>
+                <div class="controls-panel">
+                    <button class="control-btn rotate-btn" onclick="rotateSelected()">🔄 旋转45°</button>
+                    <button class="control-btn flip-btn" onclick="flipSelected()">↔️ 翻转</button>
+                    <button class="control-btn reset-btn" onclick="resetPieces()">🔃 重置位置</button>
+                    <button class="control-btn check-btn" onclick="checkSolution()">✅ 检查答案</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="puzzle-panel">
+            <div class="panel-title">🎯 目标轮廓</div>
+            <div class="puzzle-canvas-container">
+                <canvas id="puzzleCanvas" width="400" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>🎮 游戏说明</h3>
+        <ul>
+            <li><strong>选择拼块：</strong>点击拼图区域的任意拼块选中它（选中后会高亮显示）</li>
+            <li><strong>移动拼块：</strong>拖动选中的拼块到想要的位置</li>
+            <li><strong>旋转拼块：</strong>选中拼块后点击"旋转45°"按钮，或使用键盘快捷键 R</li>
+            <li><strong>翻转拼块：</strong>选中拼块后点击"翻转"按钮，或使用键盘快捷键 F（用于平行四边形）</li>
+            <li><strong>更换谜题：</strong>点击上方的谜题按钮切换不同的目标图案</li>
+            <li><strong>检查答案：</strong>完成拼图后点击"检查答案"查看是否正确</li>
+            <li><strong>重置：</strong>点击"重置位置"将所有拼块恢复到初始状态</li>
+        </ul>
+    </div>
+
+    <div class="success-message" id="successMessage">🎉 恭喜完成！</div>
+
+    <script>
+        // 画布设置
+        const piecesCanvas = document.getElementById('piecesCanvas');
+        const puzzleCanvas = document.getElementById('puzzleCanvas');
+        const piecesCtx = piecesCanvas.getContext('2d');
+        const puzzleCtx = puzzleCanvas.getContext('2d');
+
+        // 七巧板拼块颜色
+        const colors = [
+            '#FF6B6B', // 红 - 大三角1
+            '#4ECDC4', // 青 - 大三角2
+            '#45B7D1', // 蓝 - 中三角
+            '#FFA07A', // 橙 - 小三角1
+            '#98D8C8', // 绿 - 小三角2
+            '#F7DC6F', // 黄 - 正方形
+            '#BB8FCE'  // 紫 - 平行四边形
+        ];
+
+        // 基础尺寸（单位大小）
+        const UNIT = 50;
+
+        // 定义七巧板七个拼块（相对于中心的顶点坐标）
+        const pieceTemplates = [
+            // 大三角形1
+            {
+                vertices: [[-2, -1], [0, 1], [2, -1]],
+                color: colors[0],
+                name: '大三角1'
+            },
+            // 大三角形2
+            {
+                vertices: [[-2, -1], [0, 1], [2, -1]],
+                color: colors[1],
+                name: '大三角2'
+            },
+            // 中三角形
+            {
+                vertices: [[-1, -1], [1, 1], [1, -1]],
+                color: colors[2],
+                name: '中三角'
+            },
+            // 小三角形1
+            {
+                vertices: [[-1, 0], [0, 1], [1, 0]],
+                color: colors[3],
+                name: '小三角1'
+            },
+            // 小三角形2
+            {
+                vertices: [[-1, 0], [0, 1], [1, 0]],
+                color: colors[4],
+                name: '小三角2'
+            },
+            // 正方形
+            {
+                vertices: [[0, -1], [1, 0], [0, 1], [-1, 0]],
+                color: colors[5],
+                name: '正方形'
+            },
+            // 平行四边形
+            {
+                vertices: [[-1.5, -0.5], [-0.5, 0.5], [1.5, 0.5], [0.5, -0.5]],
+                color: colors[6],
+                name: '平行四边形'
+            }
+        ];
+
+        // 当前拼块状态
+        let pieces = [];
+        let selectedPiece = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let currentPuzzle = 'cat';
+
+        // 初始化拼块
+        function initPieces() {
+            pieces = pieceTemplates.map((template, index) => ({
+                ...template,
+                x: 80 + (index % 4) * 80,
+                y: 100 + Math.floor(index / 4) * 120,
+                rotation: index * 30, // 初始分散角度
+                flipped: false,
+                originalX: 80 + (index % 4) * 80,
+                originalY: 100 + Math.floor(index / 4) * 120,
+                originalRotation: index * 30
+            }));
+        }
+
+        // 获取拼块的变换后顶点
+        function getTransformedVertices(piece) {
+            return piece.vertices.map(v => {
+                let [x, y] = v;
+
+                // 翻转
+                if (piece.flipped) {
+                    x = -x;
+                }
+
+                // 旋转
+                const rad = piece.rotation * Math.PI / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+                const rx = x * cos - y * sin;
+                const ry = x * sin + y * cos;
+
+                // 平移
+                return {
+                    x: piece.x + rx * UNIT,
+                    y: piece.y + ry * UNIT
+                };
+            });
+        }
+
+        // 绘制单个拼块
+        function drawPiece(ctx, piece, isSelected = false) {
+            const vertices = getTransformedVertices(piece);
+
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+
+            // 填充
+            ctx.fillStyle = piece.color;
+            ctx.fill();
+
+            // 边框
+            if (isSelected) {
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // 添加阴影效果
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 10;
+            } else {
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.shadowBlur = 0;
+        }
+
+        // 绘制所有拼块
+        function drawPieces() {
+            piecesCtx.clearRect(0, 0, piecesCanvas.width, piecesCanvas.height);
+            pieces.forEach((piece, index) => {
+                drawPiece(piecesCtx, piece, selectedPiece === index);
+            });
+        }
+
+        // 点是否在多边形内
+        function isPointInPolygon(point, vertices) {
+            let inside = false;
+            for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                const xi = vertices[i].x, yi = vertices[i].y;
+                const xj = vertices[j].x, yj = vertices[j].y;
+
+                if (((yi > point.y) !== (yj > point.y)) &&
+                    (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        // 获取点击的拼块
+        function getPieceAtPoint(x, y) {
+            for (let i = pieces.length - 1; i >= 0; i--) {
+                const vertices = getTransformedVertices(pieces[i]);
+                if (isPointInPolygon({ x, y }, vertices)) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        // 鼠标事件处理
+        piecesCanvas.addEventListener('mousedown', (e) => {
+            const rect = piecesCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const clickedPiece = getPieceAtPoint(x, y);
+            if (clickedPiece !== null) {
+                selectedPiece = clickedPiece;
+                isDragging = true;
+                dragOffset.x = x - pieces[clickedPiece].x;
+                dragOffset.y = y - pieces[clickedPiece].y;
+                drawPieces();
+            }
+        });
+
+        piecesCanvas.addEventListener('mousemove', (e) => {
+            if (isDragging && selectedPiece !== null) {
+                const rect = piecesCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                pieces[selectedPiece].x = x - dragOffset.x;
+                pieces[selectedPiece].y = y - dragOffset.y;
+                drawPieces();
+            }
+        });
+
+        piecesCanvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        piecesCanvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // 触摸事件支持
+        piecesCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = piecesCanvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            const clickedPiece = getPieceAtPoint(x, y);
+            if (clickedPiece !== null) {
+                selectedPiece = clickedPiece;
+                isDragging = true;
+                dragOffset.x = x - pieces[clickedPiece].x;
+                dragOffset.y = y - pieces[clickedPiece].y;
+                drawPieces();
+            }
+        });
+
+        piecesCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDragging && selectedPiece !== null) {
+                const touch = e.touches[0];
+                const rect = piecesCanvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                pieces[selectedPiece].x = x - dragOffset.x;
+                pieces[selectedPiece].y = y - dragOffset.y;
+                drawPieces();
+            }
+        });
+
+        piecesCanvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // 旋转选中的拼块
+        function rotateSelected() {
+            if (selectedPiece !== null) {
+                pieces[selectedPiece].rotation = (pieces[selectedPiece].rotation + 45) % 360;
+                drawPieces();
+            }
+        }
+
+        // 翻转选中的拼块
+        function flipSelected() {
+            if (selectedPiece !== null) {
+                pieces[selectedPiece].flipped = !pieces[selectedPiece].flipped;
+                drawPieces();
+            }
+        }
+
+        // 重置拼块位置
+        function resetPieces() {
+            pieces.forEach((piece, index) => {
+                piece.x = piece.originalX;
+                piece.y = piece.originalY;
+                piece.rotation = piece.originalRotation;
+                piece.flipped = false;
+            });
+            selectedPiece = null;
+            drawPieces();
+        }
+
+        // 谜题定义（目标位置的拼块配置）
+        const puzzles = {
+            cat: {
+                name: '猫',
+                pieces: [
+                    { x: 200, y: 150, rotation: 135, flipped: false },  // 大三角1 - 身体
+                    { x: 200, y: 250, rotation: 315, flipped: false },  // 大三角2 - 身体
+                    { x: 280, y: 130, rotation: 45, flipped: false },   // 中三角 - 头
+                    { x: 320, y: 90, rotation: 135, flipped: false },    // 小三角1 - 耳朵
+                    { x: 260, y: 90, rotation: 225, flipped: false },    // 小三角2 - 耳朵
+                    { x: 320, y: 150, rotation: 45, flipped: false },    // 正方形 - 脸
+                    { x: 100, y: 200, rotation: 90, flipped: true }      // 平行四边形 - 尾巴
+                ]
+            },
+            bird: {
+                name: '鸟',
+                pieces: [
+                    { x: 180, y: 150, rotation: 180, flipped: false },  // 大三角1 - 身体
+                    { x: 180, y: 270, rotation: 0, flipped: false },    // 大三角2 - 翅膀
+                    { x: 280, y: 180, rotation: 270, flipped: false },  // 中三角 - 头
+                    { x: 330, y: 160, rotation: 180, flipped: false },  // 小三角1 - 嘴
+                    { x: 130, y: 130, rotation: 135, flipped: false },  // 小三角2 - 尾巴
+                    { x: 230, y: 130, rotation: 45, flipped: false },   // 正方形 - 脖子
+                    { x: 80, y: 180, rotation: 45, flipped: true }      // 平行四边形 - 尾羽
+                ]
+            },
+            house: {
+                name: '房子',
+                pieces: [
+                    { x: 200, y: 100, rotation: 0, flipped: false },    // 大三角1 - 屋顶
+                    { x: 200, y: 200, rotation: 180, flipped: false },  // 大三角2 - 屋顶
+                    { x: 120, y: 280, rotation: 90, flipped: false },   // 中三角 - 烟囱
+                    { x: 280, y: 280, rotation: 270, flipped: false },   // 小三角1 - 窗户
+                    { x: 320, y: 240, rotation: 0, flipped: false },    // 小三角2 - 装饰
+                    { x: 200, y: 300, rotation: 45, flipped: false },   // 正方形 - 窗户
+                    { x: 200, y: 360, rotation: 0, flipped: false }      // 平行四边形 - 门
+                ]
+            },
+            boat: {
+                name: '船',
+                pieces: [
+                    { x: 200, y: 250, rotation: 180, flipped: false },  // 大三角1 - 船身
+                    { x: 200, y: 330, rotation: 0, flipped: false },    // 大三角2 - 船身
+                    { x: 200, y: 150, rotation: 0, flipped: false },    // 中三角 - 帆
+                    { x: 150, y: 100, rotation: 90, flipped: false },   // 小三角1 - 旗帜
+                    { x: 280, y: 200, rotation: 270, flipped: false },   // 小三角2 - 装饰
+                    { x: 200, y: 200, rotation: 45, flipped: false },    // 正方形 - 桅杆
+                    { x: 100, y: 300, rotation: 30, flipped: true }     // 平行四边形 - 浪
+                ]
+            },
+            heart: {
+                name: '心形',
+                pieces: [
+                    { x: 160, y: 150, rotation: 225, flipped: false },  // 大三角1 - 左心
+                    { x: 240, y: 150, rotation: 315, flipped: false },  // 大三角2 - 右心
+                    { x: 200, y: 250, rotation: 180, flipped: false },  // 中三角 - 下心
+                    { x: 120, y: 100, rotation: 270, flipped: false },  // 小三角1 - 左上
+                    { x: 280, y: 100, rotation: 270, flipped: false },  // 小三角2 - 右上
+                    { x: 200, y: 170, rotation: 45, flipped: false },    // 正方形 - 中心
+                    { x: 200, y: 320, rotation: 0, flipped: false }      // 平行四边形 - 底部
+                ]
+            },
+            arrow: {
+                name: '箭头',
+                pieces: [
+                    { x: 280, y: 150, rotation: 0, flipped: false },    // 大三角1 - 箭头尖端
+                    { x: 280, y: 250, rotation: 180, flipped: false },  // 大三角2 - 箭头尖端
+                    { x: 180, y: 200, rotation: 0, flipped: false },    // 中三角 - 箭杆中
+                    { x: 100, y: 180, rotation: 180, flipped: false },  // 小三角1 - 箭尾上
+                    { x: 100, y: 220, rotation: 180, flipped: false },  // 小三角2 - 箭尾下
+                    { x: 230, y: 200, rotation: 45, flipped: false },   // 正方形 - 连接
+                    { x: 60, y: 200, rotation: 90, flipped: true }      // 平行四边形 - 箭羽
+                ]
+            },
+            diamond: {
+                name: '菱形',
+                pieces: [
+                    { x: 200, y: 100, rotation: 45, flipped: false },   // 大三角1 - 上
+                    { x: 200, y: 300, rotation: 225, flipped: false },  // 大三角2 - 下
+                    { x: 130, y: 200, rotation: 315, flipped: false },  // 中三角 - 左
+                    { x: 270, y: 200, rotation: 135, flipped: false },  // 小三角1 - 右上
+                    { x: 300, y: 230, rotation: 225, flipped: false },  // 小三角2 - 右下
+                    { x: 200, y: 200, rotation: 45, flipped: false },   // 正方形 - 中心
+                    { x: 150, y: 280, rotation: 0, flipped: false }      // 平行四边形 - 装饰
+                ]
+            },
+            runner: {
+                name: '跑步者',
+                pieces: [
+                    { x: 180, y: 180, rotation: 60, flipped: false },    // 大三角1 - 躯干
+                    { x: 240, y: 260, rotation: 240, flipped: false },   // 大三角2 - 腿
+                    { x: 120, y: 140, rotation: 150, flipped: false },   // 中三角 - 手臂
+                    { x: 280, y: 120, rotation: 30, flipped: false },    // 小三角1 - 头
+                    { x: 140, y: 280, rotation: 300, flipped: false },   // 小三角2 - 小腿
+                    { x: 200, y: 120, rotation: 45, flipped: false },    // 正方形 - 颈部
+                    { x: 300, y: 200, rotation: 90, flipped: true }      // 平行四边形 - 另一条腿
+                ]
+            }
+        };
+
+        // 绘制谜题轮廓
+        function drawPuzzleOutline() {
+            puzzleCtx.clearRect(0, 0, puzzleCanvas.width, puzzleCanvas.height);
+
+            const puzzle = puzzles[currentPuzzle];
+
+            // 绘制目标轮廓（半透明）
+            puzzle.pieces.forEach((pieceConfig, index) => {
+                const piece = {
+                    ...pieceTemplates[index],
+                    ...pieceConfig
+                };
+
+                const vertices = getTransformedVertices(piece);
+
+                puzzleCtx.beginPath();
+                puzzleCtx.moveTo(vertices[0].x, vertices[0].y);
+                for (let i = 1; i < vertices.length; i++) {
+                    puzzleCtx.lineTo(vertices[i].x, vertices[i].y);
+                }
+                puzzleCtx.closePath();
+
+                // 半透明填充
+                puzzleCtx.fillStyle = piece.color + '40';
+                puzzleCtx.fill();
+
+                // 虚线边框
+                puzzleCtx.strokeStyle = piece.color;
+                puzzleCtx.lineWidth = 2;
+                puzzleCtx.setLineDash([5, 5]);
+                puzzleCtx.stroke();
+                puzzleCtx.setLineDash([]);
+            });
+        }
+
+        // 切换谜题
+        function switchPuzzle(puzzleName) {
+            currentPuzzle = puzzleName;
+
+            // 更新按钮状态
+            document.querySelectorAll('.puzzle-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.puzzle === puzzleName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            drawPuzzleOutline();
+            resetPieces();
+        }
+
+        // 检查答案
+        function checkSolution() {
+            const puzzle = puzzles[currentPuzzle];
+            let correctCount = 0;
+            const tolerance = 40; // 位置容差
+            const angleTolerance = 30; // 角度容差
+
+            puzzle.pieces.forEach((targetPiece, targetIndex) => {
+                let foundMatch = false;
+
+                for (let i = 0; i < pieces.length; i++) {
+                    const piece = pieces[i];
+
+                    // 检查是否使用了正确的拼块类型
+                    if (piece.name !== pieceTemplates[targetIndex].name) continue;
+
+                    // 检查位置
+                    const dist = Math.sqrt(
+                        Math.pow(piece.x - targetPiece.x, 2) +
+                        Math.pow(piece.y - targetPiece.y, 2)
+                    );
+
+                    // 检查角度（考虑周期性）
+                    let angleDiff = Math.abs((piece.rotation % 360) - (targetPiece.rotation % 360));
+                    if (angleDiff > 180) angleDiff = 360 - angleDiff;
+
+                    // 检查翻转状态
+                    const flipMatch = piece.flipped === targetPiece.flipped;
+
+                    if (dist < tolerance && angleDiff < angleTolerance && flipMatch) {
+                        correctCount++;
+                        foundMatch = true;
+                        break;
+                    }
+                }
+            });
+
+            if (correctCount === 7) {
+                showSuccessMessage();
+            } else {
+                alert(`正确放置了 ${correctCount}/7 个拼块，继续加油！`);
+            }
+        }
+
+        // 显示成功消息
+        function showSuccessMessage() {
+            const message = document.getElementById('successMessage');
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 2000);
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                rotateSelected();
+            } else if (e.key === 'f' || e.key === 'F') {
+                flipSelected();
+            }
+        });
+
+        // 谜题按钮事件
+        document.querySelectorAll('.puzzle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchPuzzle(btn.dataset.puzzle);
+            });
+        });
+
+        // 初始化游戏
+        initPieces();
+        drawPuzzleOutline();
+        drawPieces();
+    </script>
+</body>
+</html>
