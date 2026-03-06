@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双样式进度条组件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        /* 线性进度条样式 */
+        .linear-container {
+            margin-bottom: 30px;
+        }
+
+        .linear-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background-color: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            background: linear-gradient(270deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill.animated {
+            background: linear-gradient(270deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-fill.striped {
+            background: repeating-linear-gradient(
+                45deg,
+                #667eea,
+                #667eea 10px,
+                #764ba2 10px,
+                #764ba2 20px
+            );
+            animation: moveStripes 1s linear infinite;
+        }
+
+        @keyframes moveStripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 28px 0; }
+        }
+
+        /* 环形进度条样式 */
+        .circular-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .circular-progress {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: #e0e0e0;
+            stroke-width: 2;
+        }
+
+        .circle {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.5s ease;
+        }
+
+        .percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .percentage-label {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        /* 不同颜色的环形进度条 */
+        .circle-purple {
+            stroke: url(#gradient-purple);
+        }
+
+        .circle-green {
+            stroke: url(#gradient-green);
+        }
+
+        .circle-orange {
+            stroke: url(#gradient-orange);
+        }
+
+        .circle-blue {
+            stroke: url(#gradient-blue);
+        }
+
+        /* 控制面板 */
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+        }
+
+        .value-display {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .circular-container {
+                gap: 20px;
+            }
+
+            .circular-progress {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        /* 小尺寸环形进度条 */
+        .circular-progress.small {
+            width: 80px;
+            height: 80px;
+        }
+
+        .circular-progress.small .percentage {
+            font-size: 1em;
+        }
+
+        .circular-progress.small .percentage-label {
+            font-size: 0.6em;
+        }
+
+        /* 大尺寸环形进度条 */
+        .circular-progress.large {
+            width: 200px;
+            height: 200px;
+        }
+
+        .circular-progress.large .percentage {
+            font-size: 2em;
+        }
+
+        /* 自定义尺寸环形进度条 */
+        .circular-progress.custom .percentage {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 双样式进度条组件</h1>
+
+        <!-- 线性进度条区域 -->
+        <div class="section">
+            <h2 class="section-title">📊 线性进度条</h2>
+
+            <div class="linear-container">
+                <div class="linear-label">
+                    <span>基础进度条</span>
+                    <span id="linear-value-1">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="linear-1" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="linear-container">
+                <div class="linear-label">
+                    <span>带动画效果</span>
+                    <span id="linear-value-2">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill animated" id="linear-2" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="linear-container">
+                <div class="linear-label">
+                    <span>条纹动画</span>
+                    <span id="linear-value-3">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill striped" id="linear-3" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 线性进度条控制 -->
+            <div class="controls">
+                <h3>控制面板</h3>
+                <div class="control-group">
+                    <label>基础进度条: <span class="value-display" id="control-value-1">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="control-1">
+                </div>
+                <div class="control-group">
+                    <label>动画进度条: <span class="value-display" id="control-value-2">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="control-2">
+                </div>
+                <div class="control-group">
+                    <label>条纹进度条: <span class="value-display" id="control-value-3">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="control-3">
+                </div>
+                <button class="btn" onclick="resetLinear()">重置</button>
+                <button class="btn" onclick="randomLinear()">随机设置</button>
+            </div>
+        </div>
+
+        <!-- 环形进度条区域 -->
+        <div class="section">
+            <h2 class="section-title">⭕ 环形进度条</h2>
+
+            <div class="circular-container">
+                <!-- 环形进度条 1 -->
+                <div class="circular-progress">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <defs>
+                            <linearGradient id="gradient-purple" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                            <linearGradient id="gradient-green" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#11998e" />
+                                <stop offset="100%" stop-color="#38ef7d" />
+                            </linearGradient>
+                            <linearGradient id="gradient-orange" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#f2994a" />
+                                <stop offset="100%" stop-color="#f2c94c" />
+                            </linearGradient>
+                            <linearGradient id="gradient-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#2193b0" />
+                                <stop offset="100%" stop-color="#6dd5ed" />
+                            </linearGradient>
+                        </defs>
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-purple"
+                              id="circular-1"
+                              stroke-dasharray="0, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage" id="circular-value-1">0%</div>
+                    <div class="percentage-label">下载中</div>
+                </div>
+
+                <!-- 环形进度条 2 -->
+                <div class="circular-progress">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-green"
+                              id="circular-2"
+                              stroke-dasharray="0, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage" id="circular-value-2">0%</div>
+                    <div class="percentage-label">处理中</div>
+                </div>
+
+                <!-- 环形进度条 3 -->
+                <div class="circular-progress">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-orange"
+                              id="circular-3"
+                              stroke-dasharray="0, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage" id="circular-value-3">0%</div>
+                    <div class="percentage-label">上传中</div>
+                </div>
+
+                <!-- 环形进度条 4 -->
+                <div class="circular-progress">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-blue"
+                              id="circular-4"
+                              stroke-dasharray="0, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage" id="circular-value-4">0%</div>
+                    <div class="percentage-label">分析中</div>
+                </div>
+            </div>
+
+            <!-- 环形进度条控制 -->
+            <div class="controls">
+                <h3>控制面板</h3>
+                <div class="control-group">
+                    <label>下载进度: <span class="value-display" id="circular-control-value-1">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="circular-control-1">
+                </div>
+                <div class="control-group">
+                    <label>处理进度: <span class="value-display" id="circular-control-value-2">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="circular-control-2">
+                </div>
+                <div class="control-group">
+                    <label>上传进度: <span class="value-display" id="circular-control-value-3">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="circular-control-3">
+                </div>
+                <div class="control-group">
+                    <label>分析进度: <span class="value-display" id="circular-control-value-4">0%</span></label>
+                    <input type="range" min="0" max="100" value="0" id="circular-control-4">
+                </div>
+                <button class="btn" onclick="resetCircular()">重置</button>
+                <button class="btn" onclick="randomCircular()">随机设置</button>
+                <button class="btn" onclick="simulateProgress()">模拟进度</button>
+            </div>
+        </div>
+
+        <!-- 不同尺寸环形进度条 -->
+        <div class="section">
+            <h2 class="section-title">📏 不同尺寸环形进度条</h2>
+            <div class="circular-container">
+                <div class="circular-progress small">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-purple"
+                              id="circular-small"
+                              stroke-dasharray="75, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage">75%</div>
+                </div>
+
+                <div class="circular-progress">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-green"
+                              stroke-dasharray="60, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage">60%</div>
+                </div>
+
+                <div class="circular-progress large">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle circle-orange"
+                              stroke-dasharray="85, 100"
+                              d="M18 2.0845
+                                 a 15.9155 15.9155 0 0 1 0 31.831
+                                 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="percentage">85%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 线性进度条控制
+        for (let i = 1; i <= 3; i++) {
+            const control = document.getElementById(`control-${i}`);
+            const progressBar = document.getElementById(`linear-${i}`);
+            const valueDisplay = document.getElementById(`linear-value-${i}`);
+            const controlValue = document.getElementById(`control-value-${i}`);
+
+            control.addEventListener('input', function() {
+                const value = this.value;
+                progressBar.style.width = value + '%';
+                valueDisplay.textContent = value + '%';
+                controlValue.textContent = value + '%';
+            });
+        }
+
+        // 环形进度条控制
+        for (let i = 1; i <= 4; i++) {
+            const control = document.getElementById(`circular-control-${i}`);
+            const circularPath = document.getElementById(`circular-${i}`);
+            const valueDisplay = document.getElementById(`circular-value-${i}`);
+            const controlValue = document.getElementById(`circular-control-value-${i}`);
+
+            control.addEventListener('input', function() {
+                const value = this.value;
+                circularPath.setAttribute('stroke-dasharray', `${value}, 100`);
+                valueDisplay.textContent = value + '%';
+                controlValue.textContent = value + '%';
+            });
+        }
+
+        // 重置线性进度条
+        function resetLinear() {
+            for (let i = 1; i <= 3; i++) {
+                const control = document.getElementById(`control-${i}`);
+                const progressBar = document.getElementById(`linear-${i}`);
+                const valueDisplay = document.getElementById(`linear-value-${i}`);
+                const controlValue = document.getElementById(`control-value-${i}`);
+
+                control.value = 0;
+                progressBar.style.width = '0%';
+                valueDisplay.textContent = '0%';
+                controlValue.textContent = '0%';
+            }
+        }
+
+        // 随机设置线性进度条
+        function randomLinear() {
+            for (let i = 1; i <= 3; i++) {
+                const control = document.getElementById(`control-${i}`);
+                const progressBar = document.getElementById(`linear-${i}`);
+                const valueDisplay = document.getElementById(`linear-value-${i}`);
+                const controlValue = document.getElementById(`control-value-${i}`);
+
+                const randomValue = Math.floor(Math.random() * 101);
+                control.value = randomValue;
+                progressBar.style.width = randomValue + '%';
+                valueDisplay.textContent = randomValue + '%';
+                controlValue.textContent = randomValue + '%';
+            }
+        }
+
+        // 重置环形进度条
+        function resetCircular() {
+            for (let i = 1; i <= 4; i++) {
+                const control = document.getElementById(`circular-control-${i}`);
+                const circularPath = document.getElementById(`circular-${i}`);
+                const valueDisplay = document.getElementById(`circular-value-${i}`);
+                const controlValue = document.getElementById(`circular-control-value-${i}`);
+
+                control.value = 0;
+                circularPath.setAttribute('stroke-dasharray', '0, 100');
+                valueDisplay.textContent = '0%';
+                controlValue.textContent = '0%';
+            }
+        }
+
+        // 随机设置环形进度条
+        function randomCircular() {
+            for (let i = 1; i <= 4; i++) {
+                const control = document.getElementById(`circular-control-${i}`);
+                const circularPath = document.getElementById(`circular-${i}`);
+                const valueDisplay = document.getElementById(`circular-value-${i}`);
+                const controlValue = document.getElementById(`circular-control-value-${i}`);
+
+                const randomValue = Math.floor(Math.random() * 101);
+                control.value = randomValue;
+                circularPath.setAttribute('stroke-dasharray', `${randomValue}, 100`);
+                valueDisplay.textContent = randomValue + '%';
+                controlValue.textContent = randomValue + '%';
+            }
+        }
+
+        // 模拟进度动画
+        function simulateProgress() {
+            resetCircular();
+
+            const progressData = [
+                { id: 1, target: 85, delay: 0 },
+                { id: 2, target: 60, delay: 200 },
+                { id: 3, target: 95, delay: 400 },
+                { id: 4, target: 70, delay: 600 }
+            ];
+
+            progressData.forEach(data => {
+                const control = document.getElementById(`circular-control-${data.id}`);
+                const circularPath = document.getElementById(`circular-${data.id}`);
+                const valueDisplay = document.getElementById(`circular-value-${data.id}`);
+                const controlValue = document.getElementById(`circular-control-value-${data.id}`);
+
+                setTimeout(() => {
+                    let current = 0;
+                    const interval = setInterval(() => {
+                        if (current >= data.target) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        current += Math.random() * 5;
+                        if (current > data.target) current = data.target;
+
+                        const rounded = Math.round(current);
+                        control.value = rounded;
+                        circularPath.setAttribute('stroke-dasharray', `${rounded}, 100`);
+                        valueDisplay.textContent = rounded + '%';
+                        controlValue.textContent = rounded + '%';
+                    }, 100);
+                }, data.delay);
+            });
+        }
+
+        // 页面加载时设置一些初始值
+        window.onload = function() {
+            // 设置一些初始进度值
+            const initialValues = [30, 50, 70];
+            initialValues.forEach((value, index) => {
+                const i = index + 1;
+                const control = document.getElementById(`control-${i}`);
+                const progressBar = document.getElementById(`linear-${i}`);
+                const valueDisplay = document.getElementById(`linear-value-${i}`);
+                const controlValue = document.getElementById(`control-value-${i}`);
+
+                control.value = value;
+                progressBar.style.width = value + '%';
+                valueDisplay.textContent = value + '%';
+                controlValue.textContent = value + '%';
+            });
+
+            const circularValues = [45, 65, 35, 80];
+            circularValues.forEach((value, index) => {
+                const i = index + 1;
+                const control = document.getElementById(`circular-control-${i}`);
+                const circularPath = document.getElementById(`circular-${i}`);
+                const valueDisplay = document.getElementById(`circular-value-${i}`);
+                const controlValue = document.getElementById(`circular-control-value-${i}`);
+
+                control.value = value;
+                circularPath.setAttribute('stroke-dasharray', `${value}, 100`);
+                valueDisplay.textContent = value + '%';
+                controlValue.textContent = value + '%';
+            });
+        };
+    </script>
+</body>
+</html>
