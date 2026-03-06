@@ -1,0 +1,642 @@
+/**
+ * Event Booking System - Responsive Styles
+ */
+
+/* =========================================
+   TABLET (768px - 1199px)
+   ========================================= */
+@media (max-width: 1199px) {
+  /* Container */
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  /* Grid adjustments */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Hero section */
+  .hero {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+  }
+
+  .hero-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-image {
+    order: -1;
+  }
+
+  /* Calendar */
+  .calendar-day {
+    min-height: 50px;
+  }
+
+  .day-number {
+    font-size: 0.875rem;
+  }
+
+  .event-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  /* Seat map */
+  .seat-map {
+    min-height: 350px;
+  }
+
+  /* Stat cards */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* =========================================
+   MOBILE (< 768px)
+   ========================================= */
+@media (max-width: 767px) {
+  /* Typography */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+
+  /* Container */
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+
+  /* Header */
+  .header-inner {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+  }
+
+  .logo {
+    font-size: 1.125rem;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: space-around;
+    gap: var(--spacing-xs);
+  }
+
+  .nav a {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem;
+  }
+
+  /* Grid adjustments */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hero */
+  .hero-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .hero-content p {
+    font-size: 1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  /* Calendar - Optimized for mobile */
+  .calendar-header {
+    padding: var(--spacing-md);
+  }
+
+  .calendar-title {
+    font-size: 1rem;
+  }
+
+  .calendar-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .calendar-today-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+  }
+
+  .calendar-grid-container {
+    padding: var(--spacing-sm);
+  }
+
+  .calendar-weekday {
+    font-size: 0.625rem;
+    padding: var(--spacing-xs);
+  }
+
+  .calendar-day {
+    min-height: 40px;
+    padding: var(--spacing-xs);
+  }
+
+  .day-number {
+    font-size: 0.75rem;
+  }
+
+  .event-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .event-count {
+    font-size: 0.6rem;
+  }
+
+  .calendar-legend {
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+  }
+
+  .legend-item {
+    font-size: 0.625rem;
+  }
+
+  .legend-seat {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Events Grid */
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-card-meta {
+    font-size: 0.75rem;
+  }
+
+  /* Filters Sidebar */
+  aside {
+    width: 100% !important;
+  }
+
+  aside .card {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-input,
+  .form-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Seat Map - Mobile Optimizations */
+  .seat-selection-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .seat-map-wrapper {
+    padding: var(--spacing-sm);
+  }
+
+  .seat-map-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .seat-map {
+    min-height: 250px;
+    scroll-snap-align: center;
+  }
+
+  /* Touch-friendly seats - minimum 44px */
+  .seat rect {
+    width: 22px;
+    height: 18px;
+  }
+
+  .seat-label {
+    font-size: 8px;
+  }
+
+  .seat-stage {
+    padding: var(--spacing-sm);
+    font-size: 0.875rem;
+  }
+
+  .seat-stage h3 {
+    font-size: 1rem;
+  }
+
+  .seat-legend {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .legend-seat-item {
+    font-size: 0.75rem;
+  }
+
+  .legend-seat {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Booking Panel */
+  .booking-panel {
+    position: relative;
+    top: 0;
+  }
+
+  .booking-panel-header {
+    padding: var(--spacing-md);
+  }
+
+  .booking-panel-body {
+    padding: var(--spacing-md);
+  }
+
+  .selected-seat-tag {
+    font-size: 0.875rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* Ticket - Stacked layout */
+  .ticket {
+    flex-direction: column;
+  }
+
+  .ticket-qr {
+    width: 100%;
+    border-left: none;
+    border-top: 2px dashed var(--gray-300);
+    padding: var(--spacing-lg);
+  }
+
+  .ticket-qr::before,
+  .ticket-qr::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .ticket-details {
+    padding: var(--spacing-lg);
+  }
+
+  .ticket-details h1 {
+    font-size: 1.25rem;
+  }
+
+  .ticket-info-item {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .ticket-info-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ticket-info-value {
+    font-size: 1rem;
+  }
+
+  .ticket-actions {
+    flex-direction: column;
+  }
+
+  .ticket-action-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--spacing-md);
+  }
+
+  /* Admin Dashboard */
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: relative;
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: var(--spacing-xs);
+  }
+
+  .admin-nav-item {
+    flex-shrink: 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+
+  .nav-label {
+    font-size: 0.875rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    overflow-x: auto;
+  }
+
+  /* Tables */
+  .table-responsive {
+    border-radius: var(--radius-md);
+  }
+
+  .admin-table {
+    font-size: 0.75rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  /* Buttons */
+  .btn-lg {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 1rem;
+  }
+
+  .btn-sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.875rem;
+  }
+
+  /* Cards */
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding: var(--spacing-md);
+  }
+
+  /* Categories */
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .category-card {
+    padding: var(--spacing-md);
+  }
+
+  .category-icon {
+    font-size: 2rem;
+  }
+
+  /* Sections */
+  .section {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  /* Footer */
+  .footer {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .footer .grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+}
+
+/* =========================================
+   SMALL MOBILE (< 375px)
+   ========================================= */
+@media (max-width: 374px) {
+  /* Typography */
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+
+  /* Calendar - Further minimized */
+  .calendar-title {
+    font-size: 0.875rem;
+  }
+
+  .calendar-day {
+    min-height: 35px;
+  }
+
+  .day-number {
+    font-size: 0.625rem;
+  }
+
+  /* Compact ticket */
+  .ticket-info-label {
+    font-size: 0.625rem;
+  }
+
+  .ticket-info-value {
+    font-size: 0.875rem;
+  }
+
+  /* Mini buttons */
+  .btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.875rem;
+  }
+}
+
+/* =========================================
+   LANDSCAPE MOBILE
+   ========================================= */
+@media (max-width: 767px) and (orientation: landscape) {
+  /* Reduce vertical padding */
+  .section {
+    padding: var(--spacing-md) 0;
+  }
+
+  .hero {
+    padding: var(--spacing-md) 0;
+  }
+
+  /* Compact seat map */
+  .seat-map {
+    min-height: 200px;
+  }
+
+  .seat-stage {
+    padding: var(--spacing-xs);
+  }
+
+  .ticket {
+    flex-direction: row;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .ticket-qr {
+    width: 200px;
+    min-width: 200px;
+    border-left: 2px dashed var(--gray-300);
+    border-top: none;
+  }
+}
+
+/* =========================================
+   LARGE DESKTOP (> 1400px)
+   ========================================= */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1400px;
+  }
+
+  .hero-content h1 {
+    font-size: 3.5rem;
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* =========================================
+   ACCESSIBILITY & PREFERENCES
+   ========================================= */
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .card,
+  .btn {
+    border: 1px solid currentColor;
+  }
+
+  .seat-available {
+    stroke-width: 2;
+  }
+}
+
+/* Dark mode support (auto) */
+@media (prefers-color-scheme: dark) {
+  /* Note: This is a basic foundation. Full dark mode would require
+     more extensive variable overrides */
+
+  :root {
+    --gray-50: #1a1a2e;
+    --gray-100: #16213e;
+    --gray-200: #0f3460;
+    --gray-300: #1a4a7a;
+    --gray-400: #eaeaea;
+    --gray-500: #f0f0f0;
+    --gray-600: #f5f5f5;
+    --gray-700: #fcfcfc;
+    --gray-800: #ffffff;
+    --gray-900: #ffffff;
+  }
+
+  body {
+    background: #0a0a0a;
+    color: #eaeaea;
+  }
+
+  .header {
+    background: #1a1a1a;
+  }
+
+  .card {
+    background: #1a1a1a;
+  }
+}
+
+/* Print optimizations */
+@media print and (max-width: 767px) {
+  .ticket {
+    page-break-inside: avoid;
+  }
+
+  .ticket-details {
+    font-size: 0.875rem;
+  }
+
+  .ticket-qr {
+    width: 100%;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase tap targets */
+  .btn,
+  .card,
+  .seat,
+  .calendar-day {
+    min-height: 44px;
+  }
+
+  /* Show all touch targets */
+  .seat-tooltip {
+    display: none !important;
+  }
+
+  /* Add visual feedback for touch */
+  .seat:active {
+    transform: scale(0.95);
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Large text mode accessibility */
+@media (max-width: 767px) and (max-resolution: 150dpi) {
+  html {
+    font-size: 18px;
+  }
+
+  .calendar-day {
+    min-height: 50px;
+  }
+
+  .ticket-details h1 {
+    font-size: 1.5rem;
+  }
+}
