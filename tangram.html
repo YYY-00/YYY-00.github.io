@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>七巧板拼图游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pieces-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .puzzle-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .pieces-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .puzzle-canvas-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            border: 3px solid #4a5568;
+            border-radius: 10px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .tangram-piece {
+            position: absolute;
+            cursor: grab;
+            transition: filter 0.2s;
+            transform-origin: center center;
+        }
+
+        .tangram-piece:hover {
+            filter: brightness(1.1);
+        }
+
+        .tangram-piece.dragging {
+            cursor: grabbing;
+            z-index: 1000;
+            filter: brightness(1.2);
+        }
+
+        .tangram-piece.selected {
+            filter: drop-shadow(0 0 8px #ffd700);
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 10px 18px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .rotate-btn {
+            background: #4299e1;
+            color: white;
+        }
+
+        .flip-btn {
+            background: #48bb78;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #ed8936;
+            color: white;
+        }
+
+        .puzzle-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .puzzle-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            border: 2px solid #4a5568;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .puzzle-btn:hover {
+            background: #4a5568;
+            color: white;
+        }
+
+        .puzzle-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .success-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 2000;
+            animation: successPop 0.5s ease-out;
+        }
+
+        @keyframes successPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 14px;
+            max-width: 800px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1500;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧩 七巧板拼图游戏</h1>
+
+    <div class="instructions">
+        <h3>游戏说明</h3>
+        <ul>
+            <li><strong>拖拽</strong>：点击并拖动拼块到目标区域</li>
+            <li><strong>选中</strong>：点击拼块即可选中（高亮显示）</li>
+            <li><strong>旋转</strong>：选中拼块后，点击"↻ 旋转45°"按钮，或双击拼块</li>
+            <li><strong>翻转</strong>：选中平行四边形后，可点击"⇄ 翻转"按钮</li>
+            <li><strong>目标</strong>：将所有拼块放入灰色轮廓中，完成拼图</li>
+        </ul>
+    </div>
+
+    <div class="game-container">
+        <div class="pieces-panel">
+            <div class="section-title">🎨 拼块区域</div>
+            <div class="pieces-container" id="piecesContainer">
+                <!-- 拼块将通过JavaScript生成 -->
+            </div>
+        </div>
+
+        <div class="puzzle-panel">
+            <div class="section-title">🎯 谜题选择</div>
+            <div class="puzzle-selector">
+                <button class="puzzle-btn active" data-puzzle="cat">🐱 猫</button>
+                <button class="puzzle-btn" data-puzzle="house">🏠 房子</button>
+                <button class="puzzle-btn" data-puzzle="boat">⛵ 船</button>
+                <button class="puzzle-btn" data-puzzle="bird">🐦 鸟</button>
+                <button class="puzzle-btn" data-puzzle="runner">🏃 跑者</button>
+                <button class="puzzle-btn" data-puzzle="swan">🦢 天鹅</button>
+                <button class="puzzle-btn" data-puzzle="arrow">➡️ 箭头</button>
+                <button class="puzzle-btn" data-puzzle="heart">❤️ 爱心</button>
+            </div>
+            <div class="puzzle-canvas-container">
+                <canvas id="puzzleCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button class="control-btn rotate-btn" onclick="rotateSelected()">↻ 旋转45°</button>
+                <button class="control-btn flip-btn" onclick="flipSelected()">⇄ 翻转</button>
+                <button class="control-btn reset-btn" onclick="resetPuzzle()">🔄 重置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="success-message" id="successMessage">🎉 恭喜完成！</div>
+
+    <script>
+        // 基础单位尺寸
+        const BASE_UNIT = 40;
+
+        // 拼块定义（基于标准七巧板比例）
+        const piecesDefinitions = [
+            {
+                id: 'large-tri-1',
+                name: '大三角形1',
+                color: '#e74c3c',
+                points: [[0, 0], [4, 0], [2, 2]],
+                width: 4 * BASE_UNIT,
+                height: 2 * BASE_UNIT
+            },
+            {
+                id: 'large-tri-2',
+                name: '大三角形2',
+                color: '#3498db',
+                points: [[0, 0], [4, 0], [2, 2]],
+                width: 4 * BASE_UNIT,
+                height: 2 * BASE_UNIT
+            },
+            {
+                id: 'medium-tri',
+                name: '中三角形',
+                color: '#2ecc71',
+                points: [[0, 0], [2, 2], [0, 4]],
+                width: 2 * BASE_UNIT,
+                height: 4 * BASE_UNIT
+            },
+            {
+                id: 'small-tri-1',
+                name: '小三角形1',
+                color: '#f39c12',
+                points: [[0, 0], [2, 0], [1, 1]],
+                width: 2 * BASE_UNIT,
+                height: 1 * BASE_UNIT
+            },
+            {
+                id: 'small-tri-2',
+                name: '小三角形2',
+                color: '#9b59b6',
+                points: [[0, 0], [2, 0], [1, 1]],
+                width: 2 * BASE_UNIT,
+                height: 1 * BASE_UNIT
+            },
+            {
+                id: 'square',
+                name: '正方形',
+                color: '#1abc9c',
+                points: [[0, 0], [Math.SQRT2 * BASE_UNIT, 0], [Math.SQRT2 * BASE_UNIT, Math.SQRT2 * BASE_UNIT], [0, Math.SQRT2 * BASE_UNIT]],
+                width: Math.SQRT2 * BASE_UNIT,
+                height: Math.SQRT2 * BASE_UNIT
+            },
+            {
+                id: 'parallelogram',
+                name: '平行四边形',
+                color: '#e91e63',
+                points: [[0, 0], [2, 0], [3, 1], [1, 1]],
+                width: 3 * BASE_UNIT,
+                height: 1 * BASE_UNIT
+            }
+        ];
+
+        // 谜题定义（简化轮廓，每个拼块的位置和旋转）
+        const puzzles = {
+            cat: {
+                name: '猫',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 140, y: 120, rotation: 135, flipped: false },
+                    { pieceId: 'large-tri-2', x: 140, y: 240, rotation: -135, flipped: false },
+                    { pieceId: 'medium-tri', x: 60, y: 260, rotation: -45, flipped: false },
+                    { pieceId: 'small-tri-1', x: 260, y: 100, rotation: 0, flipped: false },
+                    { pieceId: 'small-tri-2', x: 280, y: 80, rotation: 180, flipped: false },
+                    { pieceId: 'square', x: 200, y: 80, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 80, y: 160, rotation: 90, flipped: false }
+                ],
+                outline: [[140, 120], [240, 170], [280, 150], [300, 100], [260, 80], [280, 60], [240, 80], [200, 80], [183, 63], [166, 80], [140, 80], [120, 100], [100, 80], [80, 100], [60, 120], [80, 160], [60, 200], [80, 280], [140, 320], [180, 280], [200, 240], [240, 260], [240, 220], [260, 200], [240, 170]]
+            },
+            house: {
+                name: '房子',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 120, y: 80, rotation: 0, flipped: false },
+                    { pieceId: 'large-tri-2', x: 200, y: 180, rotation: 90, flipped: false },
+                    { pieceId: 'medium-tri', x: 280, y: 180, rotation: -90, flipped: false },
+                    { pieceId: 'small-tri-1', x: 280, y: 80, rotation: 0, flipped: false },
+                    { pieceId: 'small-tri-2', x: 80, y: 80, rotation: 180, flipped: false },
+                    { pieceId: 'square', x: 240, y: 140, rotation: 0, flipped: false },
+                    { pieceId: 'parallelogram', x: 80, y: 180, rotation: 90, flipped: false }
+                ],
+                outline: [[120, 80], [240, 140], [280, 140], [280, 80], [320, 80], [240, 20], [160, 80], [80, 80], [80, 180], [120, 220], [200, 300], [280, 220], [320, 180], [320, 80]]
+            },
+            boat: {
+                name: '船',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 180, y: 120, rotation: 180, flipped: false },
+                    { pieceId: 'large-tri-2', x: 100, y: 220, rotation: -90, flipped: false },
+                    { pieceId: 'medium-tri', x: 260, y: 220, rotation: 90, flipped: false },
+                    { pieceId: 'small-tri-1', x: 180, y: 80, rotation: 0, flipped: false },
+                    { pieceId: 'small-tri-2', x: 180, y: 240, rotation: 180, flipped: false },
+                    { pieceId: 'square', x: 140, y: 140, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 220, y: 160, rotation: 45, flipped: false }
+                ],
+                outline: [[180, 80], [200, 70], [220, 80], [260, 120], [260, 220], [280, 300], [200, 340], [120, 300], [140, 220], [140, 120], [100, 80], [140, 60], [180, 80]]
+            },
+            bird: {
+                name: '鸟',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 160, y: 140, rotation: 135, flipped: false },
+                    { pieceId: 'large-tri-2', x: 120, y: 260, rotation: -45, flipped: false },
+                    { pieceId: 'medium-tri', x: 240, y: 140, rotation: 45, flipped: false },
+                    { pieceId: 'small-tri-1', x: 280, y: 100, rotation: -45, flipped: false },
+                    { pieceId: 'small-tri-2', x: 60, y: 180, rotation: 135, flipped: false },
+                    { pieceId: 'square', x: 200, y: 200, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 280, y: 220, rotation: 0, flipped: false }
+                ],
+                outline: [[280, 100], [320, 80], [300, 60], [260, 80], [240, 140], [200, 180], [240, 220], [280, 220], [340, 240], [320, 280], [280, 260], [200, 320], [120, 260], [80, 240], [100, 200], [140, 220], [180, 180], [160, 140], [120, 140], [80, 120], [100, 80], [140, 100], [180, 120], [240, 100], [280, 100]]
+            },
+            runner: {
+                name: '跑者',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 180, y: 140, rotation: 180, flipped: false },
+                    { pieceId: 'large-tri-2', x: 100, y: 240, rotation: -90, flipped: false },
+                    { pieceId: 'medium-tri', x: 260, y: 100, rotation: 90, flipped: false },
+                    { pieceId: 'small-tri-1', x: 300, y: 60, rotation: 0, flipped: false },
+                    { pieceId: 'small-tri-2', x: 80, y: 280, rotation: 90, flipped: false },
+                    { pieceId: 'square', x: 140, y: 180, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 220, y: 260, rotation: -90, flipped: false }
+                ],
+                outline: [[300, 60], [320, 40], [280, 40], [260, 100], [220, 100], [200, 140], [180, 140], [160, 180], [140, 180], [180, 220], [220, 260], [300, 240], [320, 220], [280, 200], [240, 240], [200, 320], [140, 320], [100, 280], [120, 240], [80, 240], [100, 200], [140, 140], [100, 100], [120, 60], [180, 80], [220, 60], [260, 60], [300, 60]]
+            },
+            swan: {
+                name: '天鹅',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 160, y: 140, rotation: 135, flipped: false },
+                    { pieceId: 'large-tri-2', x: 120, y: 260, rotation: -45, flipped: false },
+                    { pieceId: 'medium-tri', x: 60, y: 200, rotation: 180, flipped: false },
+                    { pieceId: 'small-tri-1', x: 240, y: 100, rotation: 0, flipped: false },
+                    { pieceId: 'small-tri-2', x: 260, y: 200, rotation: 90, flipped: false },
+                    { pieceId: 'square', x: 200, y: 160, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 80, y: 280, rotation: 0, flipped: false }
+                ],
+                outline: [[260, 200], [300, 220], [280, 260], [240, 240], [240, 200], [260, 180], [260, 140], [280, 120], [260, 100], [240, 100], [220, 120], [200, 120], [180, 140], [220, 160], [260, 180], [260, 200], [220, 220], [180, 220], [140, 260], [100, 260], [60, 300], [80, 340], [140, 320], [180, 280], [180, 220], [140, 220], [120, 180], [120, 140], [160, 100], [200, 80], [240, 100], [260, 100]]
+            },
+            arrow: {
+                name: '箭头',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 160, y: 100, rotation: 0, flipped: false },
+                    { pieceId: 'large-tri-2', x: 160, y: 220, rotation: 180, flipped: false },
+                    { pieceId: 'medium-tri', x: 100, y: 160, rotation: -90, flipped: false },
+                    { pieceId: 'small-tri-1', x: 240, y: 260, rotation: 90, flipped: false },
+                    { pieceId: 'small-tri-2', x: 280, y: 220, rotation: 180, flipped: false },
+                    { pieceId: 'square', x: 200, y: 140, rotation: 0, flipped: false },
+                    { pieceId: 'parallelogram', x: 120, y: 280, rotation: 90, flipped: false }
+                ],
+                outline: [[280, 60], [320, 100], [280, 140], [240, 140], [200, 160], [160, 140], [120, 140], [80, 180], [80, 220], [120, 220], [160, 240], [200, 260], [240, 280], [280, 260], [320, 220], [320, 100], [280, 60]]
+            },
+            heart: {
+                name: '爱心',
+                targets: [
+                    { pieceId: 'large-tri-1', x: 200, y: 120, rotation: -45, flipped: false },
+                    { pieceId: 'large-tri-2', x: 120, y: 120, rotation: 45, flipped: false },
+                    { pieceId: 'medium-tri', x: 160, y: 240, rotation: 180, flipped: false },
+                    { pieceId: 'small-tri-1', x: 80, y: 80, rotation: 45, flipped: false },
+                    { pieceId: 'small-tri-2', x: 240, y: 80, rotation: -45, flipped: false },
+                    { pieceId: 'square', x: 160, y: 160, rotation: 45, flipped: false },
+                    { pieceId: 'parallelogram', x: 160, y: 280, rotation: 180, flipped: false }
+                ],
+                outline: [[160, 320], [80, 260], [40, 200], [60, 140], [100, 80], [140, 40], [180, 60], [200, 80], [220, 60], [260, 40], [300, 80], [340, 140], [360, 200], [320, 260], [240, 320], [160, 320]]
+            }
+        };
+
+        // 游戏状态
+        let pieces = [];
+        let selectedPiece = null;
+        let currentPuzzle = 'cat';
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // 创建SVG拼块
+        function createPieceSVG(piece, index) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', piece.width);
+            svg.setAttribute('height', piece.height);
+            svg.setAttribute('viewBox', `0 0 ${piece.width} ${piece.height}`);
+            svg.style.overflow = 'visible';
+            svg.classList.add('tangram-piece');
+            svg.dataset.pieceId = piece.id;
+
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const pointsStr = piece.points.map(p =>
+                `${p[0] * BASE_UNIT / BASE_UNIT},${p[1] * BASE_UNIT / BASE_UNIT}`
+            ).join(' ');
+            polygon.setAttribute('points', pointsStr);
+            polygon.setAttribute('fill', piece.color);
+            polygon.setAttribute('stroke', '#333');
+            polygon.setAttribute('stroke-width', '2');
+
+            svg.appendChild(polygon);
+
+            // 初始位置（在拼块区域中散开排列）
+            const positions = [
+                { x: 10, y: 10 }, { x: 170, y: 10 },
+                { x: 10, y: 170 }, { x: 170, y: 170 },
+                { x: 90, y: 90 }, { x: 250, y: 90 }, { x: 90, y: 250 }
+            ];
+            svg.style.left = positions[index].x + 'px';
+            svg.style.top = positions[index].y + 'px';
+
+            return svg;
+        }
+
+        // 初始化拼块
+        function initPieces() {
+            const container = document.getElementById('piecesContainer');
+            container.innerHTML = '';
+            pieces = [];
+
+            piecesDefinitions.forEach((piece, index) => {
+                const svg = createPieceSVG(piece, index);
+                container.appendChild(svg);
+
+                pieces.push({
+                    ...piece,
+                    element: svg,
+                    x: parseInt(svg.style.left),
+                    y: parseInt(svg.style.top),
+                    rotation: 0,
+                    flipped: false
+                });
+
+                // 事件监听
+                svg.addEventListener('mousedown', startDrag);
+                svg.addEventListener('dblclick', doubleClickPiece);
+            });
+        }
+
+        // 选择拼块
+        function selectPiece(piece) {
+            if (selectedPiece) {
+                selectedPiece.element.classList.remove('selected');
+            }
+            selectedPiece = piece;
+            piece.element.classList.add('selected');
+        }
+
+        // 开始拖拽
+        function startDrag(e) {
+            e.preventDefault();
+            const piece = pieces.find(p => p.element === e.currentTarget);
+            selectPiece(piece);
+            isDragging = true;
+            piece.element.classList.add('dragging');
+
+            const rect = piece.element.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        // 拖拽中
+        function drag(e) {
+            if (!isDragging || !selectedPiece) return;
+
+            const container = selectedPiece.element.parentElement;
+            const containerRect = container.getBoundingClientRect();
+
+            let newX = e.clientX - containerRect.left - dragOffset.x;
+            let newY = e.clientY - containerRect.top - dragOffset.y;
+
+            // 确保在容器范围内
+            newX = Math.max(-selectedPiece.width / 2, Math.min(newX, containerRect.width - selectedPiece.width / 2));
+            newY = Math.max(-selectedPiece.height / 2, Math.min(newY, containerRect.height - selectedPiece.height / 2));
+
+            selectedPiece.element.style.left = newX + 'px';
+            selectedPiece.element.style.top = newY + 'px';
+            selectedPiece.x = newX;
+            selectedPiece.y = newY;
+        }
+
+        // 停止拖拽
+        function stopDrag() {
+            if (selectedPiece) {
+                selectedPiece.element.classList.remove('dragging');
+            }
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+
+            checkWin();
+        }
+
+        // 双击旋转
+        function doubleClickPiece(e) {
+            e.preventDefault();
+            const piece = pieces.find(p => p.element === e.currentTarget);
+            selectPiece(piece);
+            rotatePiece(piece);
+        }
+
+        // 旋转拼块
+        function rotatePiece(piece) {
+            piece.rotation = (piece.rotation + 45) % 360;
+            piece.element.style.transform = `rotate(${piece.rotation}deg) ${piece.flipped ? 'scaleX(-1)' : ''}`;
+        }
+
+        // 旋转选中的拼块
+        function rotateSelected() {
+            if (selectedPiece) {
+                rotatePiece(selectedPiece);
+                checkWin();
+            }
+        }
+
+        // 翻转拼块
+        function flipPiece(piece) {
+            if (piece.id === 'parallelogram') {
+                piece.flipped = !piece.flipped;
+                piece.element.style.transform = `rotate(${piece.rotation}deg) ${piece.flipped ? 'scaleX(-1)' : ''}`;
+            }
+        }
+
+        // 翻转选中的拼块
+        function flipSelected() {
+            if (selectedPiece) {
+                flipPiece(selectedPiece);
+                checkWin();
+            }
+        }
+
+        // 检查是否完成
+        function checkWin() {
+            const puzzle = puzzles[currentPuzzle];
+            let correctCount = 0;
+
+            puzzle.targets.forEach(target => {
+                const piece = pieces.find(p => p.id === target.pieceId);
+                if (piece) {
+                    // 获取拼块在谜题画布中的位置
+                    const piecesRect = document.getElementById('piecesContainer').getBoundingClientRect();
+                    const canvasRect = document.getElementById('puzzleCanvas').getBoundingClientRect();
+
+                    const pieceCanvasX = piecesRect.left - canvasRect.left + piece.x + piece.width / 2;
+                    const pieceCanvasY = piecesRect.top - canvasRect.top + piece.y + piece.height / 2;
+
+                    // 检查位置是否在目标附近（允许一定误差）
+                    const distance = Math.sqrt(
+                        Math.pow(pieceCanvasX - target.x, 2) +
+                        Math.pow(pieceCanvasY - target.y, 2)
+                    );
+
+                    // 检查旋转角度
+                    const normalizedRotation = ((piece.rotation % 360) + 360) % 360;
+                    const targetRotation = ((target.rotation % 360) + 360) % 360;
+                    const rotationMatch = normalizedRotation === targetRotation ||
+                                        Math.abs(normalizedRotation - targetRotation) === 315 ||
+                                        (normalizedRotation === 0 && targetRotation === 360) ||
+                                        (normalizedRotation === 360 && targetRotation === 0);
+
+                    // 检查翻转状态
+                    const flipMatch = piece.flipped === target.flipped;
+
+                    if (distance < 30 && rotationMatch && flipMatch) {
+                        correctCount++;
+                    }
+                }
+            });
+
+            if (correctCount === 7) {
+                showSuccess();
+            }
+        }
+
+        // 显示成功消息
+        function showSuccess() {
+            document.getElementById('overlay').classList.add('active');
+            const successMsg = document.getElementById('successMessage');
+            successMsg.style.display = 'block';
+
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+                document.getElementById('overlay').classList.remove('active');
+            }, 2000);
+        }
+
+        // 绘制谜题轮廓
+        function drawPuzzleOutline(puzzleId) {
+            const canvas = document.getElementById('puzzleCanvas');
+            const ctx = canvas.getContext('2d');
+            const puzzle = puzzles[puzzleId];
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制背景轮廓
+            ctx.fillStyle = '#e0e0e0';
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+
+            if (puzzle.outline && puzzle.outline.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(puzzle.outline[0][0], puzzle.outline[0][1]);
+                for (let i = 1; i < puzzle.outline.length; i++) {
+                    ctx.lineTo(puzzle.outline[i][0], puzzle.outline[i][1]);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 绘制目标位置提示（浅色圆圈）
+            puzzle.targets.forEach(target => {
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+                ctx.fill();
+
+                // 绘制方向指示
+                ctx.save();
+                ctx.translate(target.x, target.y);
+                const angle = (target.rotation * Math.PI) / 180;
+                ctx.rotate(angle);
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+                ctx.fillRect(-3, -15, 6, 30);
+                ctx.restore();
+            });
+        }
+
+        // 切换谜题
+        function switchPuzzle(puzzleId) {
+            currentPuzzle = puzzleId;
+
+            // 更新按钮状态
+            document.querySelectorAll('.puzzle-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.puzzle === puzzleId) {
+                    btn.classList.add('active');
+                }
+            });
+
+            drawPuzzleOutline(puzzleId);
+            resetPuzzle();
+        }
+
+        // 重置拼块
+        function resetPuzzle() {
+            pieces.forEach((piece, index) => {
+                const positions = [
+                    { x: 10, y: 10 }, { x: 170, y: 10 },
+                    { x: 10, y: 170 }, { x: 170, y: 170 },
+                    { x: 90, y: 90 }, { x: 250, y: 90 }, { x: 90, y: 250 }
+                ];
+                piece.x = positions[index].x;
+                piece.y = positions[index].y;
+                piece.rotation = 0;
+                piece.flipped = false;
+                piece.element.style.left = piece.x + 'px';
+                piece.element.style.top = piece.y + 'px';
+                piece.element.style.transform = '';
+            });
+
+            if (selectedPiece) {
+                selectedPiece.element.classList.remove('selected');
+                selectedPiece = null;
+            }
+        }
+
+        // 初始化游戏
+        function initGame() {
+            initPieces();
+            drawPuzzleOutline(currentPuzzle);
+
+            // 谜题选择按钮事件
+            document.querySelectorAll('.puzzle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchPuzzle(btn.dataset.puzzle);
+                });
+            });
+
+            // 点击空白区域取消选择
+            document.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('tangram-piece') &&
+                    !e.target.classList.contains('control-btn')) {
+                    if (selectedPiece) {
+                        selectedPiece.element.classList.remove('selected');
+                        selectedPiece = null;
+                    }
+                }
+            });
+        }
+
+        // 启动游戏
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
