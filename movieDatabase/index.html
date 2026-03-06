@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影数据库 - Movie Database</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <h1>🎬 电影数据库</h1>
+                    </div>
+                    <nav class="nav">
+                        <a href="#" class="nav-link active" data-section="home">首页</a>
+                        <a href="#" class="nav-link" data-section="watchlist">我的观影列表</a>
+                        <a href="#" class="nav-link" data-section="recommendations">推荐</a>
+                    </nav>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="搜索电影..." autocomplete="off">
+                            <button id="searchBtn" class="search-btn">🔍</button>
+                            <div id="searchResults" class="search-results"></div>
+                        </div>
+                        <button id="themeToggle" class="theme-toggle">🌙</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Section -->
+            <section id="homeSection" class="section active">
+                <div class="container">
+                    <!-- Trending Section -->
+                    <section class="movie-section">
+                        <div class="section-header">
+                            <h2>🔥 热门电影</h2>
+                            <button class="view-all-btn" data-category="popular">查看全部</button>
+                        </div>
+                        <div id="popularMovies" class="movie-grid"></div>
+                        <div class="load-more-container">
+                            <button id="loadMorePopular" class="load-more-btn">加载更多</button>
+                        </div>
+                    </section>
+
+                    <!-- Top Rated Section -->
+                    <section class="movie-section">
+                        <div class="section-header">
+                            <h2>⭐ 评分最高</h2>
+                            <button class="view-all-btn" data-category="top_rated">查看全部</button>
+                        </div>
+                        <div id="topRatedMovies" class="movie-grid"></div>
+                        <div class="load-more-container">
+                            <button id="loadMoreTopRated" class="load-more-btn">加载更多</button>
+                        </div>
+                    </section>
+
+                    <!-- Upcoming Section -->
+                    <section class="movie-section">
+                        <div class="section-header">
+                            <h2>🎬 即将上映</h2>
+                            <button class="view-all-btn" data-category="upcoming">查看全部</button>
+                        </div>
+                        <div id="upcomingMovies" class="movie-grid"></div>
+                        <div class="load-more-container">
+                            <button id="loadMoreUpcoming" class="load-more-btn">加载更多</button>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <!-- Movie List Section -->
+            <section id="movieListSection" class="section hidden">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 id="movieListTitle">电影列表</h2>
+                        <button class="back-btn">← 返回首页</button>
+                    </div>
+                    <div id="movieList" class="movie-grid"></div>
+                    <div class="load-more-container">
+                        <button id="loadMoreList" class="load-more-btn">加载更多</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Watchlist Section -->
+            <section id="watchlistSection" class="section hidden">
+                <div class="container">
+                    <h2>📋 我的观影列表</h2>
+                    <div id="watchlist" class="movie-grid"></div>
+                    <p id="emptyWatchlist" class="empty-message">您的观影列表是空的，开始添加电影吧！</p>
+                </div>
+            </section>
+
+            <!-- Recommendations Section -->
+            <section id="recommendationsSection" class="section hidden">
+                <div class="container">
+                    <h2>🎯 为您推荐</h2>
+                    <p id="recommendationInfo" class="recommendation-info"></p>
+                    <div id="recommendations" class="movie-grid"></div>
+                    <p id="noRecommendations" class="empty-message">添加一些电影到您的观影列表，我们将为您推荐相关电影！</p>
+                </div>
+            </section>
+
+            <!-- Movie Detail Section -->
+            <section id="movieDetailSection" class="section hidden">
+                <div class="container">
+                    <button class="back-btn">← 返回</button>
+                    <div id="movieDetail" class="movie-detail"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner hidden">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="tmdb.js"></script>
+    <script src="components.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
