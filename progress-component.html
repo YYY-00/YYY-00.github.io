@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进度条组件 - 线性与环形</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        /* ===== 线性进度条样式 ===== */
+        .linear-progress-container {
+            margin-bottom: 25px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .linear-progress {
+            position: relative;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .linear-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+
+        .linear-progress-bar.animated {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .linear-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(0, 0, 0, 0.1) 100%
+            );
+            border-radius: 12px;
+        }
+
+        /* 不同颜色的线性进度条 */
+        .linear-progress.green .linear-progress-bar {
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .linear-progress.orange .linear-progress-bar {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .linear-progress.blue .linear-progress-bar {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        /* 细版线性进度条 */
+        .linear-progress.thin {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .linear-progress.thin .linear-progress-bar {
+            border-radius: 4px;
+        }
+
+        /* ===== 环形进度条样式 ===== */
+        .circular-progress-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .circular-progress {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circular-progress svg {
+            transform: rotate(-90deg);
+        }
+
+        .circular-progress-bg {
+            fill: none;
+            stroke: #e0e0e0;
+        }
+
+        .circular-progress-bar {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .circular-progress-content {
+            position: absolute;
+            text-align: center;
+        }
+
+        .circular-progress-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .circular-progress-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* 不同尺寸的环形进度条 */
+        .circular-progress.small svg {
+            width: 80px;
+            height: 80px;
+        }
+
+        .circular-progress.small .circular-progress-value {
+            font-size: 20px;
+        }
+
+        .circular-progress.large svg {
+            width: 200px;
+            height: 200px;
+        }
+
+        .circular-progress.large .circular-progress-value {
+            font-size: 48px;
+        }
+
+        /* 控制面板 */
+        .controls {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .controls h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 双样式进度条组件</h1>
+
+        <!-- 线性进度条区域 -->
+        <div class="section">
+            <h2 class="section-title">线性进度条</h2>
+
+            <div class="linear-progress-container">
+                <div class="progress-label">
+                    <span>默认样式</span>
+                    <span id="linear-value-1">0%</span>
+                </div>
+                <div class="linear-progress" data-progress="linear1">
+                    <div class="linear-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="linear-progress-container">
+                <div class="progress-label">
+                    <span>绿色主题</span>
+                    <span id="linear-value-2">0%</span>
+                </div>
+                <div class="linear-progress green" data-progress="linear2">
+                    <div class="linear-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="linear-progress-container">
+                <div class="progress-label">
+                    <span>橙色主题</span>
+                    <span id="linear-value-3">0%</span>
+                </div>
+                <div class="linear-progress orange" data-progress="linear3">
+                    <div class="linear-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="linear-progress-container">
+                <div class="progress-label">
+                    <span>细版样式</span>
+                    <span id="linear-value-4">0%</span>
+                </div>
+                <div class="linear-progress thin blue" data-progress="linear4">
+                    <div class="linear-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 环形进度条区域 -->
+        <div class="section">
+            <h2 class="section-title">环形进度条</h2>
+
+            <div class="circular-progress-container">
+                <!-- 小尺寸 -->
+                <div class="circular-progress small">
+                    <svg width="80" height="80">
+                        <circle class="circular-progress-bg" cx="40" cy="40" r="32" stroke-width="6"/>
+                        <circle class="circular-progress-bar" cx="40" cy="40" r="32" stroke-width="6"
+                                stroke-dasharray="201" stroke-dashoffset="201" data-progress="circular1"/>
+                    </svg>
+                    <div class="circular-progress-content">
+                        <div class="circular-progress-value" data-value="circular1">0%</div>
+                    </div>
+                </div>
+
+                <!-- 标准尺寸 -->
+                <div class="circular-progress">
+                    <svg width="120" height="120">
+                        <circle class="circular-progress-bg" cx="60" cy="60" r="50" stroke-width="8"/>
+                        <circle class="circular-progress-bar" cx="60" cy="60" r="50" stroke-width="8"
+                                stroke-dasharray="314" stroke-dashoffset="314" data-progress="circular2"/>
+                    </svg>
+                    <div class="circular-progress-content">
+                        <div class="circular-progress-value" data-value="circular2">0%</div>
+                        <div class="circular-progress-label">处理中</div>
+                    </div>
+                </div>
+
+                <!-- 大尺寸 -->
+                <div class="circular-progress large">
+                    <svg width="200" height="200">
+                        <circle class="circular-progress-bg" cx="100" cy="100" r="85" stroke-width="12"/>
+                        <circle class="circular-progress-bar" cx="100" cy="100" r="85" stroke-width="12"
+                                stroke-dasharray="534" stroke-dashoffset="534" data-progress="circular3"/>
+                    </svg>
+                    <div class="circular-progress-content">
+                        <div class="circular-progress-value" data-value="circular3">0%</div>
+                        <div class="circular-progress-label">完成度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SVG 定义渐变 -->
+        <svg width="0" height="0" style="position: absolute;">
+            <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#667eea"/>
+                    <stop offset="100%" stop-color="#764ba2"/>
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <!-- 控制面板 -->
+        <div class="controls">
+            <h3>🎮 控制面板</h3>
+
+            <div class="control-group">
+                <label for="progress-slider">设置进度值: <span id="slider-value">0</span>%</label>
+                <input type="range" id="progress-slider" min="0" max="100" value="0">
+            </div>
+
+            <div class="control-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="animation-toggle">
+                    <label for="animation-toggle">启用动画效果</label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="setProgress(0)">重置</button>
+                <button class="btn btn-secondary" onclick="setProgress(25)">25%</button>
+                <button class="btn btn-secondary" onclick="setProgress(50)">50%</button>
+                <button class="btn btn-secondary" onclick="setProgress(75)">75%</button>
+                <button class="btn btn-success" onclick="setProgress(100)">完成</button>
+                <button class="btn btn-primary" onclick="autoProgress()">自动演示</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 进度条控制类
+        class ProgressBarController {
+            constructor() {
+                this.linearProgressBars = document.querySelectorAll('.linear-progress-bar');
+                this.circularProgressBars = document.querySelectorAll('.circular-progress-bar');
+                this.slider = document.getElementById('progress-slider');
+                this.sliderValue = document.getElementById('slider-value');
+                this.animationToggle = document.getElementById('animation-toggle');
+                this.autoProgressInterval = null;
+
+                this.init();
+            }
+
+            init() {
+                // 滑块事件监听
+                this.slider.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    this.sliderValue.textContent = value;
+                    this.setProgress(value);
+                });
+
+                // 动画开关事件监听
+                this.animationToggle.addEventListener('change', (e) => {
+                    this.linearProgressBars.forEach(bar => {
+                        if (e.target.checked) {
+                            bar.classList.add('animated');
+                        } else {
+                            bar.classList.remove('animated');
+                        }
+                    });
+                });
+            }
+
+            setProgress(value) {
+                // 更新线性进度条
+                this.linearProgressBars.forEach((bar, index) => {
+                    bar.style.width = `${value}%`;
+                    const label = document.getElementById(`linear-value-${index + 1}`);
+                    if (label) {
+                        label.textContent = `${value}%`;
+                    }
+                });
+
+                // 更新环形进度条
+                this.circularProgressBars.forEach(circle => {
+                    const circumference = parseFloat(circle.getAttribute('stroke-dasharray'));
+                    const offset = circumference - (value / 100) * circumference;
+                    circle.style.strokeDashoffset = offset;
+
+                    const progressId = circle.getAttribute('data-progress');
+                    const valueElement = document.querySelector(`[data-value="${progressId}"]`);
+                    if (valueElement) {
+                        valueElement.textContent = `${value}%`;
+                    }
+                });
+
+                // 更新滑块
+                this.slider.value = value;
+                this.sliderValue.textContent = value;
+            }
+
+            autoProgress() {
+                if (this.autoProgressInterval) {
+                    clearInterval(this.autoProgressInterval);
+                    this.autoProgressInterval = null;
+                    return;
+                }
+
+                let progress = 0;
+                this.autoProgressInterval = setInterval(() => {
+                    progress += 1;
+                    if (progress > 100) {
+                        clearInterval(this.autoProgressInterval);
+                        this.autoProgressInterval = null;
+                        return;
+                    }
+                    this.setProgress(progress);
+                }, 50);
+            }
+        }
+
+        // 初始化进度条控制器
+        const controller = new ProgressBarController();
+
+        // 全局函数
+        function setProgress(value) {
+            controller.setProgress(value);
+        }
+
+        function autoProgress() {
+            controller.autoProgress();
+        }
+
+        // 添加数字动画效果
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range > 0 ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                element.textContent = `${current}%`;
+                if (current === end) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+
+        // 页面加载时的入场动画
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                controller.setProgress(65);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
