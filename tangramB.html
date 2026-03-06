@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>七巧板拼图游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .templates-panel {
+            flex: 0 0 300px;
+        }
+
+        .templates-panel h2, .play-area h2 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .template-item {
+            background: #f0f0f0;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .template-item:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .template-item.active {
+            border-color: #667eea;
+            background: #e8e9ff;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .template-item svg {
+            width: 80px;
+            height: 80px;
+        }
+
+        .template-item span {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .play-area {
+            flex: 0 0 600px;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .play-canvas, .target-canvas {
+            border: 3px solid #333;
+            border-radius: 15px;
+            background: #fff;
+        }
+
+        .play-canvas {
+            width: 380px;
+            height: 380px;
+        }
+
+        .target-canvas {
+            width: 180px;
+            height: 180px;
+        }
+
+        .piece-tray {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            min-height: 200px;
+            border: 3px dashed #ccc;
+        }
+
+        .piece-tray h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .pieces-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .rotate-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .flip-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .hint-btn {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            color: white;
+        }
+
+        .piece {
+            position: absolute;
+            cursor: grab;
+            filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.3));
+            transition: filter 0.2s ease;
+            z-index: 10;
+        }
+
+        .piece:hover {
+            filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.5)) brightness(1.1);
+        }
+
+        .piece.dragging {
+            cursor: grabbing;
+            filter: drop-shadow(8px 8px 15px rgba(0,0,0,0.4));
+            z-index: 100;
+        }
+
+        .piece.placed {
+            animation: placePulse 0.3s ease;
+        }
+
+        @keyframes placePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: successBounce 0.6s ease;
+        }
+
+        @keyframes successBounce {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .selected-indicator {
+            border: 3px solid #FFD700 !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        }
+
+        .instructions {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            color: #555;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+
+        .category-filter {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧩 七巧板拼图游戏</h1>
+
+    <div class="game-container">
+        <div class="panel templates-panel">
+            <h2>选择图案</h2>
+            <div class="category-filter">
+                <button class="filter-btn active" data-category="all">全部</button>
+                <button class="filter-btn" data-category="animals">动物</button>
+                <button class="filter-btn" data-category="objects">物品</button>
+                <button class="filter-btn" data-category="abstract">抽象</button>
+            </div>
+            <div class="template-grid" id="templateGrid"></div>
+        </div>
+
+        <div class="panel play-area">
+            <h2>游戏区域</h2>
+            <div class="canvas-container">
+                <div>
+                    <div class="play-canvas" id="playCanvas"></div>
+                    <div class="piece-tray">
+                        <h3>拼图块（点击选中，拖拽移动）</h3>
+                        <div class="pieces-container" id="piecesContainer"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="target-canvas" id="targetCanvas"></div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="control-btn rotate-btn" id="rotateBtn">🔄 旋转 45°</button>
+                <button class="control-btn flip-btn" id="flipBtn">↔️ 翻转</button>
+                <button class="control-btn hint-btn" id="hintBtn">💡 提示</button>
+                <button class="control-btn reset-btn" id="resetBtn">🔄 重置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>📖 游戏说明</h3>
+        <ul>
+            <li>从左侧选择一个目标图案</li>
+            <li>点击拼图块选中它（会显示金色边框）</li>
+            <li>拖拽拼图块到游戏区域</li>
+            <li>使用"旋转"按钮旋转选中的拼图块</li>
+            <li>使用"翻转"按钮翻转选中的拼图块</li>
+            <li>将所有拼图块摆放成目标图案的形状</li>
+            <li>点击"提示"查看目标图案的轮廓</li>
+        </ul>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        🎉 恭喜完成！ 🎉
+    </div>
+
+    <script>
+        // 七巧板的七块拼图
+        const tangramPieces = [
+            {
+                id: '_big_triangle_1',
+                name: '大三角形1',
+                color: '#FF6B6B',
+                svgPath: 'M 0,0 L 200,0 L 100,100 Z',
+                defaultX: 10,
+                defaultY: 10,
+                width: 200,
+                height: 100
+            },
+            {
+                id: 'big_triangle_2',
+                name: '大三角形2',
+                color: '#4ECDC4',
+                svgPath: 'M 0,0 L 200,0 L 100,100 Z',
+                defaultX: 10,
+                defaultY: 120,
+                width: 200,
+                height: 100
+            },
+            {
+                id: 'medium_triangle',
+                name: '中三角形',
+                color: '#45B7D1',
+                svgPath: 'M 0,0 L 140,0 L 70,70 Z',
+                defaultX: 220,
+                defaultY: 10,
+                width: 140,
+                height: 70
+            },
+            {
+                id: 'small_triangle_1',
+                name: '小三角形1',
+                color: '#f9ca24',
+                svgPath: 'M 0,0 L 100,0 L 50,50 Z',
+                defaultX: 220,
+                defaultY: 90,
+                width: 100,
+                height: 50
+            },
+            {
+                id: 'small_triangle_2',
+                name: '小三角形2',
+                color: '#6c5ce7',
+                svgPath: 'M 0,0 L 100,0 L 50,50 Z',
+                defaultX: 330,
+                defaultY: 10,
+                width: 100,
+                height: 50
+            },
+            {
+                id: 'square',
+                name: '正方形',
+                color: '#a29bfe',
+                svgPath: 'M 0,0 L 70,0 L 70,70 L 0,70 Z',
+                defaultX: 330,
+                defaultY: 70,
+                width: 70,
+                height: 70
+            },
+            {
+                id: 'parallelogram',
+                name: '平行四边形',
+                color: '#fd79a8',
+                svgPath: 'M 0,0 L 100,0 L 130,50 L 30,50 Z',
+                defaultX: 220,
+                defaultY: 150,
+                width: 130,
+                height: 50
+            }
+        ];
+
+        // 目标模板
+        const templates = [
+            {
+                id: 'cat',
+                name: '猫咪',
+                category: 'animals',
+                svgPath: 'M 30,60 L 60,30 L 90,60 L 120,30 L 150,60 L 150,120 L 120,150 L 60,150 L 30,120 Z',
+                outline: 'M 30,60 L 60,30 L 90,60 L 120,30 L 150,60 L 150,120 L 120,150 L 60,150 L 30,120 Z'
+            },
+            {
+                id: 'dog',
+                name: '小狗',
+                category: 'animals',
+                svgPath: 'M 20,80 L 50,50 L 80,80 L 140,80 L 140,50 L 170,80 L 170,140 L 20,140 Z',
+                outline: 'M 20,80 L 50,50 L 80,80 L 140,80 L 140,50 L 170,80 L 170,140 L 20,140 Z'
+            },
+            {
+                id: 'bird',
+                name: '小鸟',
+                category: 'animals',
+                svgPath: 'M 20,60 L 60,30 L 100,60 L 140,30 L 160,60 L 140,90 L 100,120 L 60,90 L 20,60 Z',
+                outline: 'M 20,60 L 60,30 L 100,60 L 140,30 L 160,60 L 140,90 L 100,120 L 60,90 L 20,60 Z'
+            },
+            {
+                id: 'fish',
+                name: '鱼',
+                category: 'animals',
+                svgPath: 'M 20,50 L 50,30 L 100,30 L 130,50 L 150,50 L 160,80 L 150,110 L 130,110 L 100,130 L 50,130 L 20,110 Z',
+                outline: 'M 20,50 L 50,30 L 100,30 L 130,50 L 150,50 L 160,80 L 150,110 L 130,110 L 100,130 L 50,130 L 20,110 Z'
+            },
+            {
+                id: 'house',
+                name: '房子',
+                category: 'objects',
+                svgPath: 'M 30,70 L 90,20 L 150,70 L 150,150 L 30,150 Z',
+                outline: 'M 30,70 L 90,20 L 150,70 L 150,150 L 30,150 Z'
+            },
+            {
+                id: 'boat',
+                name: '帆船',
+                category: 'objects',
+                svgPath: 'M 20,100 L 80,100 L 50,60 L 50,20 L 120,100 L 160,100 L 160,140 L 20,140 Z',
+                outline: 'M 20,100 L 80,100 L 50,60 L 50,20 L 120,100 L 160,100 L 160,140 L 20,140 Z'
+            },
+            {
+                id: 'airplane',
+                name: '飞机',
+                category: 'objects',
+                svgPath: 'M 90,20 L 90,60 L 140,50 L 160,70 L 140,90 L 90,80 L 90,140 L 70,140 L 70,80 L 20,90 L 10,70 L 20,50 L 70,60 L 70,20 Z',
+                outline: 'M 90,20 L 90,60 L 140,50 L 160,70 L 140,90 L 90,80 L 90,140 L 70,140 L 70,80 L 20,90 L 10,70 L 20,50 L 70,60 L 70,20 Z'
+            },
+            {
+                id: 'chair',
+                name: '椅子',
+                category: 'objects',
+                svgPath: 'M 40,40 L 40,120 L 60,120 L 60,80 L 120,80 L 120,120 L 140,120 L 140,40 L 40,40 M 60,40 L 60,20 L 120,20 L 120,40',
+                outline: 'M 40,40 L 40,120 L 60,120 L 60,80 L 120,80 L 120,120 L 140,120 L 140,40 L 40,40 M 60,40 L 60,20 L 120,20 L 120,40'
+            },
+            {
+                id: 'arrow',
+                name: '箭头',
+                category: 'abstract',
+                svgPath: 'M 20,70 L 80,30 L 80,60 L 150,60 L 150,80 L 80,80 L 80,110 Z',
+                outline: 'M 20,70 L 80,30 L 80,60 L 150,60 L 150,80 L 80,80 L 80,110 Z'
+            },
+            {
+                id: 'star',
+                name: '星星',
+                category: 'abstract',
+                svgPath: 'M 90,10 L 110,60 L 160,60 L 120,90 L 135,140 L 90,110 L 45,140 L 60,90 L 20,60 L 70,60 Z',
+                outline: 'M 90,10 L 110,60 L 160,60 L 120,90 L 135,140 L 90,110 L 45,140 L 60,90 L 20,60 L 70,60 Z'
+            },
+            {
+                id: 'heart',
+                name: '爱心',
+                category: 'abstract',
+                svgPath: 'M 90,150 C 30,100 30,50 60,30 C 80,20 90,40 90,60 C 90,40 100,20 120,30 C 150,50 150,100 90,150 Z',
+                outline: 'M 90,150 C 30,100 30,50 60,30 C 80,20 90,40 90,60 C 90,40 100,20 120,30 C 150,50 150,100 90,150 Z'
+            },
+            {
+                id: 'diamond',
+                name: '钻石',
+                category: 'abstract',
+                svgPath: 'M 90,10 L 150,60 L 90,150 L 30,60 Z M 90,10 L 90,150 M 30,60 L 150,60',
+                outline: 'M 90,10 L 150,60 L 90,150 L 30,60 Z M 90,10 L 90,150 M 30,60 L 150,60'
+            }
+        ];
+
+        // 游戏状态
+        let gameState = {
+            selectedPiece: null,
+            pieces: [],
+            currentTemplate: null,
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 }
+        };
+
+        // 初始化游戏
+        function initGame() {
+            createTemplateButtons();
+            createPieces();
+            setupEventListeners();
+        }
+
+        // 创建模板按钮
+        function createTemplateButtons() {
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = '';
+
+            templates.forEach(template => {
+                const item = document.createElement('div');
+                item.className = 'template-item';
+                item.dataset.category = template.category;
+                item.dataset.id = template.id;
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 180 180');
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', template.svgPath);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', '#333');
+                path.setAttribute('stroke-width', '3');
+
+                svg.appendChild(path);
+                item.appendChild(svg);
+
+                const span = document.createElement('span');
+                span.textContent = template.name;
+                item.appendChild(span);
+
+                item.addEventListener('click', () => selectTemplate(template));
+                grid.appendChild(item);
+            });
+        }
+
+        // 选择模板
+        function selectTemplate(template) {
+            gameState.currentTemplate = template;
+
+            // 更新选中状态
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-id="${template.id}"]`).classList.add('active');
+
+            // 在目标画布上显示模板
+            const targetCanvas = document.getElementById('targetCanvas');
+            targetCanvas.innerHTML = '';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 180 180');
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', template.svgPath);
+            path.setAttribute('fill', '#e8e9ff');
+            path.setAttribute('stroke', '#667eea');
+            path.setAttribute('stroke-width', '3');
+
+            svg.appendChild(path);
+            targetCanvas.appendChild(svg);
+        }
+
+        // 创建拼图块
+        function createPieces() {
+            const container = document.getElementById('piecesContainer');
+            container.innerHTML = '';
+            gameState.pieces = [];
+
+            tangramPieces.forEach((pieceData, index) => {
+                const piece = createPiece(pieceData, index);
+                container.appendChild(piece);
+                gameState.pieces.push({
+                    element: piece,
+                    data: pieceData,
+                    rotation: 0,
+                    flipped: false,
+                    x: 0,
+                    y: 0,
+                    inTray: true
+                });
+            });
+        }
+
+        // 创建单个拼图块
+        function createPiece(pieceData, index) {
+            const piece = document.createElement('div');
+            piece.className = 'piece';
+            piece.dataset.id = pieceData.id;
+            piece.dataset.index = index;
+            piece.style.width = pieceData.width + 'px';
+            piece.style.height = pieceData.height + 'px';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', `0 0 ${pieceData.width} ${pieceData.height}`);
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pieceData.svgPath);
+            path.setAttribute('fill', pieceData.color);
+            path.setAttribute('stroke', '#333');
+            path.setAttribute('stroke-width', '2');
+
+            svg.appendChild(path);
+            piece.appendChild(svg);
+
+            // 设置初始位置
+            piece.style.position = 'absolute';
+            piece.style.left = pieceData.defaultX + 'px';
+            piece.style.top = pieceData.defaultY + 'px';
+
+            // 添加事件监听
+            piece.addEventListener('mousedown', startDrag);
+            piece.addEventListener('click', selectPiece);
+            piece.addEventListener('touchstart', handleTouchStart, { passive: false });
+            piece.addEventListener('touchmove', handleTouchMove, { passive: false });
+            piece.addEventListener('touchend', handleTouchEnd);
+
+            return piece;
+        }
+
+        // 触摸事件处理
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            e.target.dispatchEvent(mouseEvent);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            document.dispatchEvent(mouseEvent);
+        }
+
+        function handleTouchEnd(e) {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            document.dispatchEvent(mouseEvent);
+        }
+
+        // 开始拖拽
+        function startDrag(e) {
+            e.preventDefault();
+            const piece = e.target.closest('.piece');
+            if (!piece) return;
+
+            gameState.isDragging = true;
+            piece.classList.add('dragging');
+
+            const rect = piece.getBoundingClientRect();
+            gameState.dragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+
+            // 选中拼图块
+            selectPiece(e);
+
+            // 移动到游戏区域
+            movePieceToPlayArea(piece);
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        // 拖拽
+        function drag(e) {
+            if (!gameState.isDragging || !gameState.selectedPiece) return;
+
+            const piece = gameState.selectedPiece.element;
+            const playCanvas = document.getElementById('playCanvas');
+            const canvasRect = playCanvas.getBoundingClientRect();
+
+            let newX = e.clientX - canvasRect.left - gameState.dragOffset.x;
+            let newY = e.clientY - canvasRect.top - gameState.dragOffset.y;
+
+            // 限制在游戏区域内
+            newX = Math.max(0, Math.min(newX, canvasRect.width - piece.offsetWidth));
+            newY = Math.max(0, Math.min(newY, canvasRect.height - piece.offsetHeight));
+
+            piece.style.left = newX + 'px';
+            piece.style.top = newY + 'px';
+
+            // 更新游戏状态
+            const pieceState = gameState.pieces.find(p => p.element === piece);
+            if (pieceState) {
+                pieceState.x = newX;
+                pieceState.y = newY;
+                pieceState.inTray = false;
+            }
+        }
+
+        // 停止拖拽
+        function stopDrag() {
+            if (!gameState.isDragging) return;
+
+            gameState.isDragging = false;
+            if (gameState.selectedPiece) {
+                gameState.selectedPiece.element.classList.remove('dragging');
+                gameState.selectedPiece.element.classList.add('placed');
+
+                setTimeout(() => {
+                    gameState.selectedPiece.element.classList.remove('placed');
+                }, 300);
+            }
+
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // 移动拼图块到游戏区域
+        function movePieceToPlayArea(piece) {
+            const playCanvas = document.getElementById('playCanvas');
+            const canvasRect = playCanvas.getBoundingClientRect();
+            const pieceRect = piece.getBoundingClientRect();
+
+            // 检查是否已经在游戏区域内
+            if (piece.parentNode === playCanvas) return;
+
+            // 计算新位置
+            const relativeX = pieceRect.left - canvasRect.left;
+            const relativeY = pieceRect.top - canvasRect.top;
+
+            // 移动到游戏区域
+            piece.style.left = relativeX + 'px';
+            piece.style.top = relativeY + 'px';
+            playCanvas.appendChild(piece);
+
+            // 更新状态
+            const pieceState = gameState.pieces.find(p => p.element === piece);
+            if (pieceState) {
+                pieceState.inTray = false;
+            }
+        }
+
+        // 选中拼图块
+        function selectPiece(e) {
+            // 移除之前的选中状态
+            document.querySelectorAll('.piece').forEach(p => {
+                p.classList.remove('selected-indicator');
+            });
+
+            const piece = e.target.closest('.piece');
+            if (!piece) return;
+
+            piece.classList.add('selected-indicator');
+
+            const index = parseInt(piece.dataset.index);
+            gameState.selectedPiece = gameState.pieces[index];
+        }
+
+        // 旋转拼图块
+        function rotatePiece() {
+            if (!gameState.selectedPiece) return;
+
+            const piece = gameState.selectedPiece.element;
+            const pieceState = gameState.pieces.find(p => p.element === piece);
+
+            pieceState.rotation = (pieceState.rotation + 45) % 360;
+
+            const svg = piece.querySelector('svg');
+            svg.style.transform = `rotate(${pieceState.rotation}deg)`;
+            svg.style.transformOrigin = 'center center';
+
+            if (pieceState.flipped) {
+                svg.style.transform += ' scaleX(-1)';
+            }
+        }
+
+        // 翻转拼图块
+        function flipPiece() {
+            if (!gameState.selectedPiece) return;
+
+            const piece = gameState.selectedPiece.element;
+            const pieceState = gameState.pieces.find(p => p.element === piece);
+
+            pieceState.flipped = !pieceState.flipped;
+
+            const svg = piece.querySelector('svg');
+            svg.style.transform = `rotate(${pieceState.rotation}deg) scaleX(${pieceState.flipped ? -1 : 1})`;
+            svg.style.transformOrigin = 'center center';
+        }
+
+        // 显示提示
+        function showHint() {
+            if (!gameState.currentTemplate) {
+                alert('请先选择一个目标图案！');
+                return;
+            }
+
+            const playCanvas = document.getElementById('playCanvas');
+
+            // 移除旧的提示
+            const oldHint = playCanvas.querySelector('.hint-overlay');
+            if (oldHint) oldHint.remove();
+
+            // 创建提示叠加层
+            const hintOverlay = document.createElement('div');
+            hintOverlay.className = 'hint-overlay';
+            hintOverlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1;
+            `;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 180 180');
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', gameState.currentTemplate.svgPath);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', 'rgba(102, 126, 234, 0.5)');
+            path.setAttribute('stroke-width', '8');
+            path.setAttribute('stroke-dasharray', '10,5');
+
+            svg.appendChild(path);
+            hintOverlay.appendChild(svg);
+            playCanvas.appendChild(hintOverlay);
+
+            // 3秒后移除提示
+            setTimeout(() => {
+                hintOverlay.remove();
+            }, 3000);
+        }
+
+        // 重置游戏
+        function resetGame() {
+            const playCanvas = document.getElementById('playCanvas');
+            const piecesContainer = document.getElementById('piecesContainer');
+
+            // 移动所有拼图块回托盘
+            gameState.pieces.forEach(pieceState => {
+                const piece = pieceState.element;
+                piece.style.position = 'absolute';
+                piece.style.left = pieceState.data.defaultX + 'px';
+                piece.style.top = pieceState.data.defaultY + 'px';
+                piece.style.transform = '';
+
+                const svg = piece.querySelector('svg');
+                svg.style.transform = '';
+
+                pieceState.rotation = 0;
+                pieceState.flipped = false;
+                pieceState.inTray = true;
+
+                piecesContainer.appendChild(piece);
+            });
+
+            // 清除选中状态
+            gameState.selectedPiece = null;
+            document.querySelectorAll('.piece').forEach(p => {
+                p.classList.remove('selected-indicator');
+            });
+
+            // 移除提示
+            const hint = playCanvas.querySelector('.hint-overlay');
+            if (hint) hint.remove();
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('rotateBtn').addEventListener('click', rotatePiece);
+            document.getElementById('flipBtn').addEventListener('click', flipPiece);
+            document.getElementById('hintBtn').addEventListener('click', showHint);
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+            // 分类过滤
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const category = btn.dataset.category;
+                    document.querySelectorAll('.template-item').forEach(item => {
+                        if (category === 'all' || item.dataset.category === category) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        }
+
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
