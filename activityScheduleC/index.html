@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动预订系统</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>活动预订系统</span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn active" data-view="events">活动列表</button>
+                <button class="nav-btn" data-view="admin">管理员面板</button>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 活动列表视图 -->
+            <div id="events-view" class="view active">
+                <!-- 筛选器 -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>日期范围</label>
+                        <input type="date" id="filter-date-start" class="filter-input">
+                        <span>至</span>
+                        <input type="date" id="filter-date-end" class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label>场地</label>
+                        <select id="filter-venue" class="filter-input">
+                            <option value="">全部场地</option>
+                            <option value="大剧院">大剧院</option>
+                            <option value="音乐厅">音乐厅</option>
+                            <option value="体育馆">体育馆</option>
+                            <option value="展览中心">展览中心</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>类别</label>
+                        <select id="filter-category" class="filter-input">
+                            <option value="">全部类别</option>
+                            <option value="演唱会">演唱会</option>
+                            <option value="体育赛事">体育赛事</option>
+                            <option value="演讲">演讲</option>
+                            <option value="展览">展览</option>
+                        </select>
+                    </div>
+                    <button id="reset-filters" class="btn-secondary">重置</button>
+                </div>
+
+                <!-- 日历视图 -->
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="prev-month" class="calendar-nav"><</button>
+                        <h2 id="current-month"></h2>
+                        <button id="next-month" class="calendar-nav">></button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">日</div>
+                        <div class="calendar-day-header">一</div>
+                        <div class="calendar-day-header">二</div>
+                        <div class="calendar-day-header">三</div>
+                        <div class="calendar-day-header">四</div>
+                        <div class="calendar-day-header">五</div>
+                        <div class="calendar-day-header">六</div>
+                    </div>
+                    <div id="calendar-days" class="calendar-grid"></div>
+                </div>
+
+                <!-- 活动列表 -->
+                <div id="events-list" class="events-list"></div>
+            </div>
+
+            <!-- 座位选择视图 -->
+            <div id="seating-view" class="view">
+                <div class="seating-container">
+                    <div class="seating-header">
+                        <button id="back-to-events" class="btn-secondary">← 返回</button>
+                        <h2 id="selected-event-title"></h2>
+                    </div>
+
+                    <div class="event-info">
+                        <div class="info-item">
+                            <strong>时间:</strong>
+                            <span id="event-datetime"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>场地:</strong>
+                            <span id="event-venue"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>类别:</strong>
+                            <span id="event-category"></span>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="seat available"></div>
+                            <span>可售</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="seat selected"></div>
+                            <span>已选</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="seat occupied"></div>
+                            <span>已售</span>
+                        </div>
+                    </div>
+
+                    <div class="seating-chart-container">
+                        <svg id="seating-chart" viewBox="0 0 400 300"></svg>
+                    </div>
+
+                    <div class="seating-summary">
+                        <div class="summary-info">
+                            <p>已选座位: <span id="selected-count">0</span></p>
+                            <p>总计: ¥<span id="total-price">0</span></p>
+                        </div>
+                        <button id="book-seats" class="btn-primary" disabled>预订</button>
+                    </div>
+
+                    <div id="selected-seats-list" class="selected-seats"></div>
+                </div>
+            </div>
+
+            <!-- 管理员面板 -->
+            <div id="admin-view" class="view">
+                <div class="admin-container">
+                    <h2>管理员仪表盘</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>总活动数</h3>
+                            <p id="total-events" class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>总预订数</h3>
+                            <p id="total-bookings" class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>总收入</h3>
+                            <p id="total-revenue" class="stat-number">¥0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>上座率</h3>
+                            <p id="occupancy-rate" class="stat-number">0%</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-charts">
+                        <div class="chart-card">
+                            <h3>各类别预订情况</h3>
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>各场地预订情况</h3>
+                            <canvas id="venue-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="admin-table">
+                        <h3>预订记录</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>预订ID</th>
+                                    <th>活动</th>
+                                    <th>座位</th>
+                                    <th>金额</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 门票模态框 -->
+        <div id="ticket-modal" class="modal">
+            <div class="modal-content">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <h2>活动门票</h2>
+                        <span id="ticket-booking-id" class="booking-id"></span>
+                    </div>
+                    <div class="ticket-body">
+                        <h3 id="ticket-event-title"></h3>
+                        <div class="ticket-details">
+                            <p><strong>时间:</strong> <span id="ticket-datetime"></span></p>
+                            <p><strong>场地:</strong> <span id="ticket-venue"></span></p>
+                            <p><strong>座位:</strong> <span id="ticket-seats"></span></p>
+                        </div>
+                        <div id="qrcode" class="qrcode-container"></div>
+                    </div>
+                    <div class="ticket-actions">
+                        <button id="send-reminder" class="btn-primary">发送提醒邮件</button>
+                        <button id="close-ticket" class="btn-secondary">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 确认模态框 -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content small">
+                <h2>确认预订</h2>
+                <p>您即将预订以下座位:</p>
+                <ul id="confirm-seats"></ul>
+                <p class="total">总计: ¥<span id="confirm-total"></span></p>
+                <div class="modal-actions">
+                    <button id="cancel-booking" class="btn-secondary">取消</button>
+                    <button id="confirm-booking" class="btn-primary">确认预订</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
