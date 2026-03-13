@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>进度条组件 - 线性与环形</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #3b82f6;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    --track: #334155;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, var(--primary), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h2 {
+    font-size: 18px;
+    color: var(--muted);
+    margin: 48px 0 20px;
+    padding-left: 12px;
+    border-left: 3px solid var(--primary);
+  }
+
+  /* ---- 卡片 ---- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  /* ---- 控制面板 ---- */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .controls label {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 200px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--track);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(59,130,246,.5);
+  }
+
+  select {
+    background: var(--track);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+
+  button:hover { opacity: .85; }
+
+  /* ============ 线性进度条 ============ */
+  .linear-bar {
+    width: 100%;
+    background: var(--track);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .linear-bar--sm { height: 6px; }
+  .linear-bar--md { height: 12px; }
+  .linear-bar--lg { height: 20px; }
+
+  .linear-bar__fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0%;
+    transition: width .6s cubic-bezier(.4,0,.2,1), background .3s;
+  }
+
+  /* 条纹动画 */
+  .linear-bar__fill--striped {
+    background-image: linear-gradient(
+      45deg,
+      rgba(255,255,255,.15) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255,255,255,.15) 50%,
+      rgba(255,255,255,.15) 75%,
+      transparent 75%
+    );
+    background-size: 20px 20px;
+    animation: stripe-move 1s linear infinite;
+  }
+
+  @keyframes stripe-move {
+    0%   { background-position: 0 0; }
+    100% { background-position: 20px 0; }
+  }
+
+  /* 发光 */
+  .linear-bar__fill--glow {
+    box-shadow: 0 0 12px 2px currentColor;
+  }
+
+  /* 百分比标签 */
+  .linear-bar__label {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.4);
+    opacity: 0;
+    transition: opacity .3s;
+  }
+
+  .linear-bar__label--visible {
+    opacity: 1;
+  }
+
+  /* 渐变线性 */
+  .linear-bar__fill--gradient-blue   { background: linear-gradient(90deg, #3b82f6, #60a5fa); color: #3b82f6; }
+  .linear-bar__fill--gradient-green  { background: linear-gradient(90deg, #22c55e, #4ade80); color: #22c55e; }
+  .linear-bar__fill--gradient-orange { background: linear-gradient(90deg, #f59e0b, #fbbf24); color: #f59e0b; }
+  .linear-bar__fill--gradient-red    { background: linear-gradient(90deg, #ef4444, #f87171); color: #ef4444; }
+  .linear-bar__fill--gradient-purple { background: linear-gradient(90deg, #8b5cf6, #a78bfa); color: #8b5cf6; }
+
+  /* ============ 环形进度条 ============ */
+  .circle-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  .circle-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .circle-bar svg {
+    transform: rotate(-90deg);
+  }
+
+  .circle-bar__track {
+    fill: none;
+    stroke: var(--track);
+  }
+
+  .circle-bar__fill {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), stroke .3s;
+  }
+
+  .circle-bar__text {
+    position: absolute;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .circle-bar__text--sm { font-size: 14px; }
+  .circle-bar__text--md { font-size: 20px; }
+  .circle-bar__text--lg { font-size: 28px; }
+
+  /* 环形发光 */
+  .circle-bar__fill--glow {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  /* 颜色 */
+  .color-blue   { stroke: #3b82f6; color: #3b82f6; }
+  .color-green  { stroke: #22c55e; color: #22c55e; }
+  .color-orange { stroke: #f59e0b; color: #f59e0b; }
+  .color-red    { stroke: #ef4444; color: #ef4444; }
+  .color-purple { stroke: #8b5cf6; color: #8b5cf6; }
+
+  /* ---- 行标签 ---- */
+  .row-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>进度条组件</h1>
+
+  <!-- ====== 控制面板 ====== -->
+  <div class="card">
+    <div class="controls">
+      <label>进度</label>
+      <input type="range" id="progressRange" min="0" max="100" value="68">
+      <span id="progressVal" style="min-width:42px;text-align:center">68%</span>
+
+      <label>动画</label>
+      <select id="animStyle">
+        <option value="smooth">平滑</option>
+        <option value="striped">条纹</option>
+        <option value="glow">发光</option>
+        <option value="striped-glow">条纹+发光</option>
+      </select>
+
+      <button id="btnAnimate">演示动画</button>
+      <button id="btnReset">重置</button>
+    </div>
+  </div>
+
+  <!-- ====== 线性进度条 ====== -->
+  <h2>线性进度条</h2>
+
+  <!-- 小 / 蓝 -->
+  <div class="card">
+    <div class="row-label">小尺寸 &middot; 蓝色 &middot; 0%</div>
+    <div class="linear-bar linear-bar--sm">
+      <div class="linear-bar__fill linear-bar__fill--gradient-blue linear-progress" data-key="sm-blue"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row-label">中等尺寸 &middot; 紫色渐变</div>
+    <div class="linear-bar linear-bar--md">
+      <div class="linear-bar__fill linear-bar__fill--gradient-purple linear-progress" data-key="md-purple"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row-label">大尺寸 &middot; 绿色渐变 &middot; 带标签</div>
+    <div class="linear-bar linear-bar--lg">
+      <div class="linear-bar__fill linear-bar__fill--gradient-green linear-progress" data-key="lg-green"></div>
+      <span class="linear-bar__label linear-bar__label--visible linear-label" data-key="lg-green">0%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row-label">大尺寸 &middot; 橙色</div>
+    <div class="linear-bar linear-bar--lg">
+      <div class="linear-bar__fill linear-bar__fill--gradient-orange linear-progress" data-key="lg-orange"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row-label">大尺寸 &middot; 红色</div>
+    <div class="linear-bar linear-bar--lg">
+      <div class="linear-bar__fill linear-bar__fill--gradient-red linear-progress" data-key="lg-red"></div>
+    </div>
+  </div>
+
+  <!-- ====== 环形进度条 ====== -->
+  <h2>环形进度条</h2>
+
+  <div class="card">
+    <div class="circle-group">
+      <!-- 小 / 蓝 -->
+      <div class="circle-bar">
+        <div class="row-label" style="text-align:center;width:100%">小 &middot; 蓝色</div>
+        <svg width="100" height="100" class="circle-item" data-key="sm-blue" data-size="100" data-sw="6">
+          <circle class="circle-bar__track" cx="50" cy="50" r="44"/>
+          <circle class="circle-bar__fill color-blue" cx="50" cy="50" r="44"
+                  stroke-dasharray="276.46" stroke-dashoffset="276.46"/>
+        </svg>
+        <span class="circle-bar__text circle-bar__text--sm">0%</span>
+      </div>
+
+      <!-- 中 / 绿色 -->
+      <div class="circle-bar">
+        <div class="row-label" style="text-align:center;width:100%">中 &middot; 绿色</div>
+        <svg width="140" height="140" class="circle-item" data-key="md-green" data-size="140" data-sw="10">
+          <circle class="circle-bar__track" cx="70" cy="70" r="60"/>
+          <circle class="circle-bar__fill color-green" cx="70" cy="70" r="60"
+                  stroke-dasharray="376.99" stroke-dashoffset="376.99"/>
+        </svg>
+        <span class="circle-bar__text circle-bar__text--md">0%</span>
+      </div>
+
+      <!-- 大 / 紫色 -->
+      <div class="circle-bar">
+        <div class="row-label" style="text-align:center;width:100%">大 &middot; 紫色</div>
+        <svg width="180" height="180" class="circle-item" data-key="lg-purple" data-size="180" data-sw="12">
+          <circle class="circle-bar__track" cx="90" cy="90" r="78"/>
+          <circle class="circle-bar__fill color-purple" cx="90" cy="90" r="78"
+                  stroke-dasharray="490.09" stroke-dashoffset="490.09"/>
+        </svg>
+        <span class="circle-bar__text circle-bar__text--lg">0%</span>
+      </div>
+
+      <!-- 中 / 橙色 -->
+      <div class="circle-bar">
+        <div class="row-label" style="text-align:center;width:100%">中 &middot; 橙色</div>
+        <svg width="140" height="140" class="circle-item" data-key="md-orange" data-size="140" data-sw="10">
+          <circle class="circle-bar__track" cx="70" cy="70" r="60"/>
+          <circle class="circle-bar__fill color-orange" cx="70" cy="70" r="60"
+                  stroke-dasharray="376.99" stroke-dashoffset="376.99"/>
+        </svg>
+        <span class="circle-bar__text circle-bar__text--md">0%</span>
+      </div>
+
+      <!-- 中 / 红色 -->
+      <div class="circle-bar">
+        <div class="row-label" style="text-align:center;width:100%">中 &middot; 红色</div>
+        <svg width="140" height="140" class="circle-item" data-key="md-red" data-size="140" data-sw="10">
+          <circle class="circle-bar__track" cx="70" cy="70" r="60"/>
+          <circle class="circle-bar__fill color-red" cx="70" cy="70" r="60"
+                  stroke-dasharray="376.99" stroke-dashoffset="376.99"/>
+        </svg>
+        <span class="circle-bar__text circle-bar__text--md">0%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* -------- DOM -------- */
+  const range      = document.getElementById('progressRange');
+  const valSpan    = document.getElementById('progressVal');
+  const animSelect = document.getElementById('animStyle');
+  const btnAnimate = document.getElementById('btnAnimate');
+  const btnReset   = document.getElementById('btnReset');
+
+  const linearFills = document.querySelectorAll('.linear-progress');
+  const linearLabels = document.querySelectorAll('.linear-label');
+  const circleFills = document.querySelectorAll('.circle-item');
+
+  /* -------- 设置进度 -------- */
+  function setProgress(pct) {
+    /* 线性 */
+    linearFills.forEach(el => { el.style.width = pct + '%'; });
+    linearLabels.forEach(el => { el.textContent = pct + '%'; });
+
+    /* 环形：根据 data-key 匹配圆心文字 */
+    circleFills.forEach(svg => {
+      const circumference = parseFloat(svg.querySelector('.circle-bar__fill').getAttribute('stroke-dasharray'));
+      const offset = circumference * (1 - pct / 100);
+      svg.querySelector('.circle-bar__fill').setAttribute('stroke-dashoffset', offset);
+
+      const textEl = svg.closest('.circle-bar').querySelector('.circle-bar__text');
+      if (textEl) textEl.textContent = pct + '%';
+    });
+
+    /* 动画样式 */
+    const style = animSelect.value;
+    linearFills.forEach(el => {
+      el.classList.toggle('linear-bar__fill--striped', style === 'striped' || style === 'striped-glow');
+      el.classList.toggle('linear-bar__fill--glow',    style === 'glow'    || style === 'striped-glow');
+    });
+
+    circleFills.forEach(svg => {
+      const fill = svg.querySelector('.circle-bar__fill');
+      fill.classList.toggle('circle-bar__fill--glow', style === 'glow' || style === 'striped-glow');
+    });
+
+    valSpan.textContent = pct + '%';
+  }
+
+  range.addEventListener('input', () => setProgress(+range.value));
+  animSelect.addEventListener('change', () => setProgress(+range.value));
+
+  /* -------- 演示动画 -------- */
+  function animateDemo() {
+    let current = 0;
+    const step = () => {
+      current += 1;
+      if (current > 100) { range.value = 100; return; }
+      range.value = current;
+      setProgress(current);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  btnAnimate.addEventListener('click', animateDemo);
+
+  btnReset.addEventListener('click', () => {
+    range.value = 0;
+    setProgress(0);
+  });
+
+  /* 初始化 */
+  setProgress(+range.value);
+</script>
+</body>
+</html>
